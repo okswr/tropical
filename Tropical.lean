@@ -38,56 +38,131 @@ open MySemiring
 --   | [x], y₁ :: y => (mulBoolList [x] [y₁]) ++ (mulBoolList [x] y)
 --   | x₁ :: x , y => (mulBoolList [x₁] y) ++ (mulBoolList x y)
 
-def mulBoolList (l₁ l₂ : List Bool) : List Bool :=
-  l₁.flatMap (fun x => l₂.map (fun y => x || y))
+-- def mulBoolList (l₁ l₂ : List Bool) : List Bool :=
+--   l₁.flatMap (fun x => l₂.map (fun y => x || y))
 
-#eval mulBoolList [true,false,true] [true,true,false]
--- [x₁,x₂,x₃] [y₁,y₂,y₃] = [x₁y₁, x₁y₂, x₁y₃, x₂y₁, x₂y₂, x₂y₃, x₃y₁, x₃y₂, x₃y₃]
--- となっていると思うが、AI出力なので確認できていない
+-- #eval mulBoolList [true,false,true] [true,true,false]
+-- -- [x₁,x₂,x₃] [y₁,y₂,y₃] = [x₁y₁, x₁y₂, x₁y₃, x₂y₁, x₂y₂, x₂y₃, x₃y₁, x₃y₂, x₃y₃]
+-- -- となっていると思うが、AI出力なので確認できていない
 
-#eval mulBoolList [false] [true,true,false]
-#eval mulBoolList [true,false,false] [false]
+-- #eval mulBoolList [false] [true,true,false]
+-- #eval mulBoolList [true,false,false] [false]
 
-#eval mulBoolList (mulBoolList [false,true] [false, true]) [false,true]
-#eval mulBoolList [false,true] (mulBoolList  [false, true] [false,true])
+-- #eval mulBoolList (mulBoolList [false,true] [false, true]) [false,true]
+-- #eval mulBoolList [false,true] (mulBoolList  [false, true] [false,true])
 
-#eval mulBoolList [false,true] ([true,false,false] ++ [true,false])
-#eval (mulBoolList [false,true] [true,false,false]) ++ (mulBoolList [false,true] [true,false])
--- これは半環にならない.
-instance instList : MySemiring (List Bool) where
-  add := List.append    -- [a,b] + [a,c] = [a,b,a,c]
-  zero := List.nil      -- [] + [a,b] = [a,b] , [a,b] + [] = [a,b]
-  mul := mulBoolList    -- [a,b] * [c,d] = [a∨c, a∨d, b∨c, b∨d]
-  one := [false]        -- [false] * [a,b] = [a,b] , [a,b] * [false] = [a,b]
+-- #eval mulBoolList [false,true] ([true,false,false] ++ [true,false])
+-- #eval (mulBoolList [false,true] [true,false,false]) ++ (mulBoolList [false,true] [true,false])
+-- -- これは半環にならない.
+-- instance instList : MySemiring (List Bool) where
+--   add := List.append    -- [a,b] + [a,c] = [a,b,a,c]
+--   zero := List.nil      -- [] + [a,b] = [a,b] , [a,b] + [] = [a,b]
+--   mul := mulBoolList    -- [a,b] * [c,d] = [a∨c, a∨d, b∨c, b∨d]
+--   one := [false]        -- [false] * [a,b] = [a,b] , [a,b] * [false] = [a,b]
+--   add_assoc := by
+--     intro a b c
+--     simp
+--   add_left_zero := by
+--     intro a
+--     simp
+--   add_right_zero := by
+--     intro a
+--     simp
+--   mul_assoc := by
+--     intro a b c
+--     sorry
+--   mul_left_one := by
+--     intro a
+--     sorry
+--   mul_right_one := by
+--     intro a
+--     sorry
+--   zero_ne_one := by simp
+--   left_distrib := by
+--     intro a b c
+--     sorry -- 分配法則成り立たないのでダメ
+--   right_distrib := sorry
+--   zero_mul := sorry
+--   mul_zero := sorry
+
+-- example : ∃ (a b : List Bool), add a b ≠ add b a := by
+--   use [true], [false]
+--   simp [add]
+
+
+
+inductive S where
+  | o : S
+  | e : S
+  | a : S
+  | b : S
+deriving DecidableEq, Repr
+
+#print S
+
+instance : Zero S where
+  zero := S.o
+
+def S.add : S → S → S
+  | o, x => x
+  | x, o => x
+  | e, _ => e
+  | _, e => e
+  | a, _ => a
+  | b, _ => b
+
+def S.mul : S → S → S
+  | e, x => x
+  | x, e => x
+  | _, _ => o
+
+instance : Add S where
+  add := S.add
+
+class PseudoSemiring (R : Type*) extends AddMonoid R, Monoid R, Distrib R, MulZeroClass R where
+  zero_ne_one : (0 : R) ≠ (1 : R)
+
+instance : PseudoSemiring S where
+  add := S.add
+  mul := S.mul
+  zero := S.o
+  one := S.e
+  zero_add := by intro x ; rfl
+  add_zero := by
+    intro x
+    cases x <;> rfl
+  one_mul := by intro x ; rfl
+  mul_one := by
+    intro x
+    cases x <;> rfl
+  zero_ne_one := by exact not_eq_of_beq_eq_false rfl
+  zero_mul := by
+    intro x
+    cases x <;> rfl
+  mul_zero := by
+    intro x
+    cases x <;> rfl
   add_assoc := by
-    intro a b c
-    simp
-  add_left_zero := by
-    intro a
-    simp
-  add_right_zero := by
-    intro a
-    simp
+    intro x y z
+    cases x <;> cases y <;> cases z <;> decide
   mul_assoc := by
-    intro a b c
-    sorry
-  mul_left_one := by
-    intro a
-    sorry
-  mul_right_one := by
-    intro a
-    sorry
-  zero_ne_one := by simp
+    intro x y z
+    cases x <;> cases y <;> cases z <;> rfl
   left_distrib := by
-    intro a b c
-    sorry -- 分配法則成り立たないのでダメ
-  right_distrib := sorry
-  zero_mul := sorry
-  mul_zero := sorry
+    intro x y z
+    cases x <;> cases y <;> cases z <;> decide
+  right_distrib := by
+    intro x y z
+    cases x <;> cases y <;> cases z <;> decide
+  nsmul := nsmulRec
 
-example : ∃ (a b : List Bool), add a b ≠ add b a := by
-  use [true], [false]
-  simp [add]
+
+theorem non_commutative_of_PseudoSemiring : ∃(x y : S), x + y ≠ y + x := by
+  use S.a, S.b
+  decide
+
+
+
 
 
 #check CommGroup
@@ -260,6 +335,11 @@ instance : Semiring Bool where
 -- Con
 
 -- とりあえずサクッとスケッチを描くこと（今日）
+
+
+
+
+
 
 
 
