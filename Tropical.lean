@@ -6,24 +6,24 @@ universe u
 
 -- 加法についての可換性を仮定せず半環を与えたとき、これが加法について可換になるかを確認
 -- したかった
-class MySemiring (R : Type u) where
-  add : R → R → R
-  zero : R
-  mul : R → R → R
-  one : R
-  add_assoc : ∀ a b c : R, add (add a b) c = add a (add b c)
-  add_left_zero : ∀ a : R, add a zero = a
-  add_right_zero : ∀ a : R, add zero a = a
-  mul_assoc : ∀ a b c : R, mul (mul a b) c = mul a (mul b c)
-  mul_left_one : ∀ a : R, mul a one = a
-  mul_right_one : ∀ a : R, mul one a = a
-  zero_ne_one : zero ≠ one
-  left_distrib : ∀ a b c : R, mul a (add b c) = add (mul a b) (mul a c)
-  right_distrib : ∀ a b c : R, mul (add a b) c = add (mul a c) (mul b c)
-  zero_mul : ∀ a : R, mul zero a = zero
-  mul_zero : ∀ a : R, mul a zero = zero
+-- class MySemiring (R : Type u) where
+--   add : R → R → R
+--   zero : R
+--   mul : R → R → R
+--   one : R
+--   add_assoc : ∀ a b c : R, add (add a b) c = add a (add b c)
+--   add_left_zero : ∀ a : R, add a zero = a
+--   add_right_zero : ∀ a : R, add zero a = a
+--   mul_assoc : ∀ a b c : R, mul (mul a b) c = mul a (mul b c)
+--   mul_left_one : ∀ a : R, mul a one = a
+--   mul_right_one : ∀ a : R, mul one a = a
+--   zero_ne_one : zero ≠ one
+--   left_distrib : ∀ a b c : R, mul a (add b c) = add (mul a b) (mul a c)
+--   right_distrib : ∀ a b c : R, mul (add a b) c = add (mul a c) (mul b c)
+--   zero_mul : ∀ a : R, mul zero a = zero
+--   mul_zero : ∀ a : R, mul a zero = zero
 
-open MySemiring
+-- open MySemiring
 
 #check List.any
 #print List
@@ -344,6 +344,23 @@ instance : Semiring Bool where
 
 
 --example 2.2
+example : Semiring (WithTop Nat) where
+  zero := ⊤
+  one := 0
+  add := Min.min
+  mul := Add.add
+  zero_add := by sorry
+  add_zero := by sorry
+  add_comm := by sorry
+  add_assoc := by sorry
+  one_mul := by sorry
+  mul_one := by sorry
+  zero_mul := by sorry
+  mul_zero := by sorry
+  mul_assoc := by sorry
+  left_distrib := by sorry
+  right_distrib := by sorry
+  nsmul := by nsmulRec
 
 
 
