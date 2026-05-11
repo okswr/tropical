@@ -367,7 +367,7 @@ example : Semiring (WithTop Nat) where
 
 --definition 2.4
 
-
+--RingConを使うことになるでしょう．
 
 --definition2.5
 
