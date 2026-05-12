@@ -116,6 +116,30 @@ def S.mul : S → S → S
   | x, e => x
   | _, _ => o
 
+/-
+example.
+∘ | y
+--+---
+x |x∘y
+
+
++ | 0 | a | b | 1
+--+---+---+---+----
+0 | 0 | a | b | 1
+a | a | a | a | 1
+b | b | b | b | 1
+1 | 1 | 1 | 1 | 1
+
+* | 0 | a | b | 1
+--+---+---+---+----
+0 | 0 | 0 | 0 | 0
+a | 0 | 0 | 0 | a
+b | 0 | 0 | 0 | b
+1 | 0 | a | b | 1
+
+The above S is an example that is noncommutative under addition.
+-/
+
 instance : Add S where
   add := S.add
 
@@ -370,6 +394,8 @@ example : Semiring (WithTop Nat) where
 --RingConを使うことになるでしょう．
 
 --definition2.5
+
+-- ねじれ積を定義します．
 
 --lemma 2.6
 
