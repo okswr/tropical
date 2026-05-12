@@ -258,98 +258,45 @@ instance : Semiring Bool where
   one := true
   add_assoc := by
     intro a b c
-    by_cases atr : (a = true)
-    · rw [atr]
-      rw [@Bool.eq_iff_iff]
-      exact Bool.coe_iff_coe.mpr rfl
-    · have ha : a = false := by
-        exact eq_false_of_ne_true atr
-      rw [ha]
-      by_cases btr : (b = true)
-      · rw [btr]
-        rw [Bool.eq_iff_iff]
-        exact Bool.coe_iff_coe.mpr rfl
-      · have hb : b = false := by
-          exact eq_false_of_ne_true btr
-        rw [hb]
-        by_cases ctr : (c = true)
-        · rw [ctr]
-          rw [Bool.eq_iff_iff]
-          exact Bool.coe_iff_coe.mpr rfl
-        · have hc : c = false := by
-            exact eq_false_of_ne_true ctr
-          rw [hc]
-          rfl
+    cases a <;> cases b <;> cases c <;> rfl
   zero_add := by
     intro a
     rfl
   add_comm := by
     intro a b
-    by_cases atr : a = true
-    · rw [atr]
-      by_cases btr : b = true
-      · rw [btr]
-      · have hb : b = false := by
-          exact eq_false_of_ne_true btr
-        rw [hb]
-        rfl
-    · have ha : a = false := by
-        exact eq_false_of_ne_true atr
-      rw [ha]
-      by_cases btr : b = true
-      · rw [btr]
-        rfl
-      · have hb : b = false := by
-          exact eq_false_of_ne_true btr
-        rw [hb]
+    cases a <;> cases b <;> rfl
   add_zero := by
     intro a
-    by_cases atr : a = 1
-    · rw [atr]
-      rfl
-    · have ha : a = 0 := by
-        exact Bool.not_eq_not.mp atr
-      rw [ha]
-      rfl
+    cases a <;> rfl
   left_distrib := by
     intro a b c
-    by_cases atr : a = true
-    · rw [atr]
-      rfl
-    · have ha : a = false := by
-        exact eq_false_of_ne_true atr
-      rw [ha]
-      rfl
-  right_distrib := by sorry
+    cases a <;> cases b <;> rfl
+  right_distrib := by
+    intro a b c
+    cases a <;> cases b <;> cases c <;> rfl
   zero_mul := by
     intro a
     rfl
-  mul_zero := sorry
+  mul_zero := by
+    intro a
+    cases a <;> rfl
   mul_assoc := by
     intro a b c
-    by_cases atr : a = true
-    · rw [atr]
-      rfl
-    · have ha : a = false := by
-        exact eq_false_of_ne_true atr
-      rw [ha]
-      rfl
+    cases a <;> cases b <;> cases c <;> rfl
   one_mul := by
     intro a
     rfl
   mul_one := by
     intro a
-    by_cases atr : a = true
-    · rw [atr]
-      rfl
-    · have ha : a = false := by
-        exact eq_false_of_ne_true atr
-      rw [ha]
-      rfl
-  nsmul := by sorry
-  nsmul_zero := by sorry
-  nsmul_succ := by sorry
-  natCast_succ := by sorry
+    cases a <;> rfl
+  nsmul := nsmulRec
+  nsmul_succ := by
+    intro n x
+    rw [nsmulRec]
+    sorry
+  natCast_succ := by
+    intro n
+    sorry
 
 
 -- クイックアクセス上で#diagonal_powを入力することで、検索できる
@@ -378,17 +325,69 @@ example : Semiring (WithTop Nat) where
   mul := Add.add
   zero_add := by
     intro a
-    sorry
-  add_zero := by sorry
-  add_comm := by sorry
-  add_assoc := by sorry
-  one_mul := by sorry
-  mul_one := by sorry
-  zero_mul := by sorry
-  mul_zero := by sorry
-  mul_assoc := by sorry
-  left_distrib := by sorry
-  right_distrib := by sorry
+    change Min.min ⊤ a = a
+    cases a <;> rfl
+  add_zero := by
+    intro a
+    change Min.min a ⊤ = a
+    cases a <;> rfl
+  add_comm := by
+    intro a b
+    change Min.min a b = Min.min b a
+    cases a <;> cases b
+    · rfl
+    · rfl
+    · rfl
+    · apply min_comm
+  add_assoc := by
+    intro a b c
+    change Min.min (Min.min a b) c = Min.min a (Min.min b c)
+    cases a <;> cases b <;> cases c
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · apply min_assoc
+  one_mul := by
+    intro a
+    change 0 + a = a
+    simp
+  mul_one := by
+    intro a
+    change a + 0 = a
+    simp
+  zero_mul := by
+    intro a
+    change ⊤ + a = ⊤
+    simp
+  mul_zero := by
+    intro a
+    change a + ⊤ = ⊤
+    simp
+  mul_assoc := by
+    intro a b c
+    change a + b + c = a + (b + c)
+    cases a <;> cases b <;> cases c
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · apply _root_.add_assoc
+
+  left_distrib := by
+    intro a b c
+    change a + Min.min b c = Min.min (a + b) (a + c)
+    cases a <;> cases b <;> cases c <;> simp [add_min]
+  right_distrib := by
+    intro a b c
+    change Min.min a b + c = Min.min (a + c) (b + c)
+    cases a <;> cases b <;> cases c <;> simp [min_add]
   nsmul := by sorry
   nsmul_zero := by sorry
   nsmul_succ := by sorry
@@ -418,13 +417,34 @@ example : Semiring (WithTop Real) where
     intro a b c
     change Min.min (Min.min a b) c = Min.min a (Min.min b c)
     rw [min_assoc]
-  one_mul := by sorry
-  mul_one := by sorry
-  zero_mul := by sorry
-  mul_zero := by sorry
-  mul_assoc := by sorry
-  left_distrib := by sorry
-  right_distrib := by sorry
+  one_mul := by
+    intro a
+    change 0 + a = a
+    simp
+  mul_one := by
+    intro a
+    change a + 0 = a
+    cases a <;> simp
+  zero_mul := by
+    intro a
+    change ⊤ + a = ⊤
+    cases a <;> simp
+  mul_zero := by
+    intro a
+    change a + ⊤ = ⊤
+    cases a <;> simp
+  mul_assoc := by
+    intro a b c
+    change a + b + c = a + (b + c)
+    simp [add_assoc]
+  left_distrib := by
+    intro a b c
+    change a + Min.min b c = Min.min (a + b) (a + c)
+    simp [add_min]
+  right_distrib := by
+    intro a b c
+    change Min.min a b + c = Min.min (a + c) (b + c)
+    simp [min_add]
   nsmul := by sorry
   nsmul_zero := by sorry
   nsmul_succ := by sorry
@@ -459,9 +479,9 @@ theorem twistprod_con (a b c d : R) (r : RingCon R) (h1 : r a b) (h2 : r c d) :
     rw [twistProd]
     simp only
     apply RingCon.add
-    apply RingCon.mul
-    · exact (RingCon.eq r).mp rfl
-    · exact h2
+    · apply RingCon.mul
+      · exact (RingCon.eq r).mp rfl
+      · exact h2
     · apply RingCon.mul
       · exact (RingCon.eq r).mp rfl
       · apply RingCon.symm
