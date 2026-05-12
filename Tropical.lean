@@ -1,4 +1,3 @@
-import Tropical.Basic
 import mathlib
 
 universe u
@@ -90,7 +89,9 @@ universe u
 --   simp [add]
 
 
-
+-- 可換性を仮定しないモノイドの組(S,+,*)に分配法則と吸収則と0≠1を与えたものについて
+-- (これを擬半環-PseudoSemiring とする)
+-- 加法について非可換な例を挙げる．
 inductive S where
   | o : S
   | e : S
@@ -185,6 +186,8 @@ theorem non_commutative_of_PseudoSemiring : ∃(x y : S), x + y ≠ y + x := by
   use S.a, S.b
   decide
 
+-- 上記の擬半環について，加法は非可換だが，乗法については可換である．
+-- 加法，乗法ともに非可換である例は存在するのだろうか？
 
 
 
@@ -373,7 +376,9 @@ example : Semiring (WithTop Nat) where
   one := 0
   add := Min.min
   mul := Add.add
-  zero_add := by sorry
+  zero_add := by
+    intro a
+    sorry
   add_zero := by sorry
   add_comm := by sorry
   add_assoc := by sorry
@@ -384,22 +389,99 @@ example : Semiring (WithTop Nat) where
   mul_assoc := by sorry
   left_distrib := by sorry
   right_distrib := by sorry
-  nsmul := by nsmulRec
+  nsmul := by sorry
+  nsmul_zero := by sorry
+  nsmul_succ := by sorry
+  natCast_zero := by sorry
+  natCast_succ := by sorry
 
 
+-- optimization algebra
+example : Semiring (WithTop Real) where
+  zero := ⊤
+  one := 0
+  add := Min.min
+  mul := Add.add
+  zero_add := by
+    intro a
+    change Min.min (⊤ : WithTop Real) (a : WithTop Real) = (a : WithTop Real)
+    rw [min_top_left]
+  add_zero := by
+    intro a
+    change Min.min (a : WithTop Real) (⊤ : WithTop Real) = (a : WithTop Real)
+    rw [min_top_right]
+  add_comm := by
+    intro a b
+    change Min.min a b = Min.min b a
+    rw [min_comm]
+  add_assoc := by
+    intro a b c
+    change Min.min (Min.min a b) c = Min.min a (Min.min b c)
+    rw [min_assoc]
+  one_mul := by sorry
+  mul_one := by sorry
+  zero_mul := by sorry
+  mul_zero := by sorry
+  mul_assoc := by sorry
+  left_distrib := by sorry
+  right_distrib := by sorry
+  nsmul := by sorry
+  nsmul_zero := by sorry
+  nsmul_succ := by sorry
+  natCast_zero := by sorry
+  natCast_succ := by sorry
 
 
+variable {R : Type*} [Semiring R]
 --definition 2.4
+
+
 
 --RingConを使うことになるでしょう．
 
 --definition2.5
 
--- ねじれ積を定義します．
+-- ねじれ積を定義．
+-- def twistProd : R × R → R × R → R × R
+-- | (a, b) , (c, d) => (a * c + b * d, a * d + b * c)
+
+def twistProd : R × R → R × R → R × R
+| (a, b) , (c, d) => (a * c + b * d, a * d + b * c)
+
 
 --lemma 2.6
+
+--theorem : ∀(a,b), (c,d) ∈ E , twistProd (c,d) (a,b) ∈ E
+
+-- r a b,r c d → r (a * c + b * d) (a * d + b * c)
+theorem twistprod_con (a b c d : R) (r : RingCon R) (h1 : r a b) (h2 : r c d) :
+  r (twistProd (a,b) (c,d)).1 (twistProd (a,b) (c,d)).2 := by
+    rw [twistProd]
+    simp only
+    apply RingCon.add
+    apply RingCon.mul
+    · exact (RingCon.eq r).mp rfl
+    · exact h2
+    · apply RingCon.mul
+      · exact (RingCon.eq r).mp rfl
+      · apply RingCon.symm
+        exact h2
+
+
+
+--   mul' : ∀ {w x y z}, r w x → r y z → r (w * y) (x * z)
+structure RingCon' (R : Type*) [Semiring R] extends AddCon R where
+  twist_mul' : ∀{w x y z}, r w x → r y z → r (w * y + x * z) (w * z + x * y)
+
+
+example : (RingCon R) ≅ (RingCon' R) where
+  hom := by sorry
+  inv := by sorry
+
 
 --example 2.9
 
 
---exam,ple 2.10
+
+
+--example 2.10
