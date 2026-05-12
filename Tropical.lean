@@ -4,95 +4,111 @@ import mathlib
 universe u
 
 
--- 加法についての可換性を仮定せず半環を与えたとき、これが加法について可換になるかを確認
--- したかった
-class MySemiring (R : Type u) where
-  add : R → R → R
-  zero : R
-  mul : R → R → R
-  one : R
-  add_assoc : ∀ a b c : R, add (add a b) c = add a (add b c)
-  add_left_zero : ∀ a : R, add a zero = a
-  add_right_zero : ∀ a : R, add zero a = a
-  mul_assoc : ∀ a b c : R, mul (mul a b) c = mul a (mul b c)
-  mul_left_one : ∀ a : R, mul a one = a
-  mul_right_one : ∀ a : R, mul one a = a
-  zero_ne_one : zero ≠ one
-  left_distrib : ∀ a b c : R, mul a (add b c) = add (mul a b) (mul a c)
-  right_distrib : ∀ a b c : R, mul (add a b) c = add (mul a c) (mul b c)
-  zero_mul : ∀ a : R, mul zero a = zero
-  mul_zero : ∀ a : R, mul a zero = zero
 
-open MySemiring
+-- 可換性を仮定しないモノイドの組(S,+,*)に分配法則と吸収則と0≠1を与えたものについて
+-- (これを擬半環-PseudoSemiring とする)
+-- 加法について非可換な例を挙げる．
+inductive S where
+  | o : S
+  | e : S
+  | a : S
+  | b : S
+deriving DecidableEq, Repr
 
-#check List.any
-#print List
-#eval (true || false)
-#eval ([1,2,3] : List ℕ).head?
-#eval ([1,2,3] : List ℕ).tail
 
--- def mulBoolList : (List Bool) → (List Bool) → (List Bool)
---   | [] , _ => []
---   | _ , [] => []
---   | [x] , [y] => [x||y]
---   | [x], y₁ :: y => (mulBoolList [x] [y₁]) ++ (mulBoolList [x] y)
---   | x₁ :: x , y => (mulBoolList [x₁] y) ++ (mulBoolList x y)
 
-def mulBoolList (l₁ l₂ : List Bool) : List Bool :=
-  l₁.flatMap (fun x => l₂.map (fun y => x || y))
+instance : Zero S where
+  zero := S.o
 
-#eval mulBoolList [true,false,true] [true,true,false]
--- [x₁,x₂,x₃] [y₁,y₂,y₃] = [x₁y₁, x₁y₂, x₁y₃, x₂y₁, x₂y₂, x₂y₃, x₃y₁, x₃y₂, x₃y₃]
--- となっていると思うが、AI出力なので確認できていない
+def S.add : S → S → S
+  | o, x => x
+  | x, o => x
+  | e, _ => e
+  | _, e => e
+  | a, _ => a
+  | b, _ => b
 
-#eval mulBoolList [false] [true,true,false]
-#eval mulBoolList [true,false,false] [false]
+def S.mul : S → S → S
+  | e, x => x
+  | x, e => x
+  | _, _ => o
 
-#eval mulBoolList (mulBoolList [false,true] [false, true]) [false,true]
-#eval mulBoolList [false,true] (mulBoolList  [false, true] [false,true])
+/-
+example.
+∘ | y
+--+---
+x |x∘y
 
-#eval mulBoolList [false,true] ([true,false,false] ++ [true,false])
-#eval (mulBoolList [false,true] [true,false,false]) ++ (mulBoolList [false,true] [true,false])
--- これは半環にならない.
-instance instList : MySemiring (List Bool) where
-  add := List.append    -- [a,b] + [a,c] = [a,b,a,c]
-  zero := List.nil      -- [] + [a,b] = [a,b] , [a,b] + [] = [a,b]
-  mul := mulBoolList    -- [a,b] * [c,d] = [a∨c, a∨d, b∨c, b∨d]
-  one := [false]        -- [false] * [a,b] = [a,b] , [a,b] * [false] = [a,b]
+
++ | 0 | a | b | 1
+--+---+---+---+----
+0 | 0 | a | b | 1
+a | a | a | a | 1
+b | b | b | b | 1
+1 | 1 | 1 | 1 | 1
+
+* | 0 | a | b | 1
+--+---+---+---+----
+0 | 0 | 0 | 0 | 0
+a | 0 | 0 | 0 | a
+b | 0 | 0 | 0 | b
+1 | 0 | a | b | 1
+
+The above S is an example that is noncommutative under addition.
+-/
+
+instance : Add S where
+  add := S.add
+
+class PseudoSemiring (R : Type*) extends AddMonoid R, Monoid R, Distrib R, MulZeroClass R where
+  zero_ne_one : (0 : R) ≠ (1 : R)
+
+instance : PseudoSemiring S where
+  add := S.add
+  mul := S.mul
+  zero := S.o
+  one := S.e
+  zero_add := by intro x ; rfl
+  add_zero := by
+    intro x
+    cases x <;> rfl
+  one_mul := by intro x ; rfl
+  mul_one := by
+    intro x
+    cases x <;> rfl
+  zero_ne_one := by exact not_eq_of_beq_eq_false rfl
+  zero_mul := by
+    intro x
+    cases x <;> rfl
+  mul_zero := by
+    intro x
+    cases x <;> rfl
   add_assoc := by
-    intro a b c
-    simp
-  add_left_zero := by
-    intro a
-    simp
-  add_right_zero := by
-    intro a
-    simp
+    intro x y z
+    cases x <;> cases y <;> cases z <;> decide
   mul_assoc := by
-    intro a b c
-    sorry
-  mul_left_one := by
-    intro a
-    sorry
-  mul_right_one := by
-    intro a
-    sorry
-  zero_ne_one := by simp
+    intro x y z
+    cases x <;> cases y <;> cases z <;> rfl
   left_distrib := by
-    intro a b c
-    sorry -- 分配法則成り立たないのでダメ
-  right_distrib := sorry
-  zero_mul := sorry
-  mul_zero := sorry
-
-example : ∃ (a b : List Bool), add a b ≠ add b a := by
-  use [true], [false]
-  simp [add]
+    intro x y z
+    cases x <;> cases y <;> cases z <;> decide
+  right_distrib := by
+    intro x y z
+    cases x <;> cases y <;> cases z <;> decide
+  nsmul := nsmulRec
 
 
-#check CommGroup
-#check AddGroup
-#check Group.inv_mul_cancel
+theorem non_commutative_of_PseudoSemiring : ∃(x y : S), x + y ≠ y + x := by
+  use S.a, S.b
+  decide
+
+-- 上記の擬半環について，加法は非可換だが，乗法については可換である．
+-- 加法，乗法ともに非可換である例は存在するのだろうか？
+
+
+
+
+
 
 
 
@@ -156,98 +172,45 @@ instance : Semiring Bool where
   one := true
   add_assoc := by
     intro a b c
-    by_cases atr : (a = true)
-    · rw [atr]
-      rw [@Bool.eq_iff_iff]
-      exact Bool.coe_iff_coe.mpr rfl
-    · have ha : a = false := by
-        exact eq_false_of_ne_true atr
-      rw [ha]
-      by_cases btr : (b = true)
-      · rw [btr]
-        rw [Bool.eq_iff_iff]
-        exact Bool.coe_iff_coe.mpr rfl
-      · have hb : b = false := by
-          exact eq_false_of_ne_true btr
-        rw [hb]
-        by_cases ctr : (c = true)
-        · rw [ctr]
-          rw [Bool.eq_iff_iff]
-          exact Bool.coe_iff_coe.mpr rfl
-        · have hc : c = false := by
-            exact eq_false_of_ne_true ctr
-          rw [hc]
-          rfl
+    cases a <;> cases b <;> cases c <;> rfl
   zero_add := by
     intro a
     rfl
   add_comm := by
     intro a b
-    by_cases atr : a = true
-    · rw [atr]
-      by_cases btr : b = true
-      · rw [btr]
-      · have hb : b = false := by
-          exact eq_false_of_ne_true btr
-        rw [hb]
-        rfl
-    · have ha : a = false := by
-        exact eq_false_of_ne_true atr
-      rw [ha]
-      by_cases btr : b = true
-      · rw [btr]
-        rfl
-      · have hb : b = false := by
-          exact eq_false_of_ne_true btr
-        rw [hb]
+    cases a <;> cases b <;> rfl
   add_zero := by
     intro a
-    by_cases atr : a = 1
-    · rw [atr]
-      rfl
-    · have ha : a = 0 := by
-        exact Bool.not_eq_not.mp atr
-      rw [ha]
-      rfl
+    cases a <;> rfl
   left_distrib := by
     intro a b c
-    by_cases atr : a = true
-    · rw [atr]
-      rfl
-    · have ha : a = false := by
-        exact eq_false_of_ne_true atr
-      rw [ha]
-      rfl
-  right_distrib := by sorry
+    cases a <;> cases b <;> rfl
+  right_distrib := by
+    intro a b c
+    cases a <;> cases b <;> cases c <;> rfl
   zero_mul := by
     intro a
     rfl
-  mul_zero := sorry
+  mul_zero := by
+    intro a
+    cases a <;> rfl
   mul_assoc := by
     intro a b c
-    by_cases atr : a = true
-    · rw [atr]
-      rfl
-    · have ha : a = false := by
-        exact eq_false_of_ne_true atr
-      rw [ha]
-      rfl
+    cases a <;> cases b <;> cases c <;> rfl
   one_mul := by
     intro a
     rfl
   mul_one := by
     intro a
-    by_cases atr : a = true
-    · rw [atr]
-      rfl
-    · have ha : a = false := by
-        exact eq_false_of_ne_true atr
-      rw [ha]
-      rfl
-  nsmul := by sorry
-  nsmul_zero := by sorry
-  nsmul_succ := by sorry
-  natCast_succ := by sorry
+    cases a <;> rfl
+  nsmul := nsmulRec
+  nsmul_succ := by
+    intro n x
+    rw [nsmulRec]
+    sorry
+  natCast_succ := by
+    intro n
+    sorry
 
 
 -- クイックアクセス上で#diagonal_powを入力することで、検索できる
@@ -263,20 +226,200 @@ instance : Semiring Bool where
 
 
 
+
+
+
+
+
 --example 2.2
+example : Semiring (WithTop Nat) where
+  zero := ⊤
+  one := 0
+  add := Min.min
+  mul := Add.add
+  zero_add := by
+    intro a
+    change Min.min ⊤ a = a
+    cases a <;> rfl
+  add_zero := by
+    intro a
+    change Min.min a ⊤ = a
+    cases a <;> rfl
+  add_comm := by
+    intro a b
+    change Min.min a b = Min.min b a
+    cases a <;> cases b <;> simp [min_comm]
+  add_assoc := by
+    intro a b c
+    change Min.min (Min.min a b) c = Min.min a (Min.min b c)
+    cases a <;> cases b <;> cases c <;> simp [min_assoc]
+  one_mul := by
+    intro a
+    change 0 + a = a
+    simp
+  mul_one := by
+    intro a
+    change a + 0 = a
+    simp
+  zero_mul := by
+    intro a
+    change ⊤ + a = ⊤
+    simp
+  mul_zero := by
+    intro a
+    change a + ⊤ = ⊤
+    simp
+  mul_assoc := by
+    intro a b c
+    change a + b + c = a + (b + c)
+    cases a <;> cases b <;> cases c <;> simp[_root_.add_assoc]
+  left_distrib := by
+    intro a b c
+    change a + Min.min b c = Min.min (a + b) (a + c)
+    cases a <;> cases b <;> cases c <;> simp [add_min]
+  right_distrib := by
+    intro a b c
+    change Min.min a b + c = Min.min (a + c) (b + c)
+    cases a <;> cases b <;> cases c <;> simp [min_add]
+  nsmul := nsmulRec
+  nsmul_zero := by
+    intro x
+    simp [nsmulRec]
+    sorry
+  nsmul_succ := by sorry
+  natCast_zero := by sorry
+  natCast_succ := by sorry
 
 
+-- optimization algebra
+example : Semiring (WithTop Real) where
+  zero := ⊤
+  one := 0
+  add := Min.min
+  mul := Add.add
+  zero_add := by
+    intro a
+    change Min.min (⊤ : WithTop Real) (a : WithTop Real) = (a : WithTop Real)
+    rw [min_top_left]
+  add_zero := by
+    intro a
+    change Min.min (a : WithTop Real) (⊤ : WithTop Real) = (a : WithTop Real)
+    rw [min_top_right]
+  add_comm := by
+    intro a b
+    change Min.min a b = Min.min b a
+    rw [min_comm]
+  add_assoc := by
+    intro a b c
+    change Min.min (Min.min a b) c = Min.min a (Min.min b c)
+    rw [min_assoc]
+  one_mul := by
+    intro a
+    change 0 + a = a
+    simp
+  mul_one := by
+    intro a
+    change a + 0 = a
+    cases a <;> simp
+  zero_mul := by
+    intro a
+    change ⊤ + a = ⊤
+    cases a <;> simp
+  mul_zero := by
+    intro a
+    change a + ⊤ = ⊤
+    cases a <;> simp
+  mul_assoc := by
+    intro a b c
+    change a + b + c = a + (b + c)
+    simp [add_assoc]
+  left_distrib := by
+    intro a b c
+    change a + Min.min b c = Min.min (a + b) (a + c)
+    simp [add_min]
+  right_distrib := by
+    intro a b c
+    change Min.min a b + c = Min.min (a + c) (b + c)
+    simp [min_add]
+  nsmul := by sorry
+  nsmul_zero := by sorry
+  nsmul_succ := by sorry
+  natCast_zero := by sorry
+  natCast_succ := by sorry
 
 
+variable {R : Type*} [Semiring R]
 --definition 2.4
 
 
 
+--RingConを使うことになるでしょう．
+
 --definition2.5
+
+-- ねじれ積を定義．
+-- def twistProd : R × R → R × R → R × R
+-- | (a, b) , (c, d) => (a * c + b * d, a * d + b * c)
+
+def twistProd : R × R → R × R → R × R
+| (a, b) , (c, d) => (a * c + b * d, a * d + b * c)
+
 
 --lemma 2.6
 
+--theorem : ∀(a,b), (c,d) ∈ E , twistProd (c,d) (a,b) ∈ E
+
+-- r a b,r c d → r (a * c + b * d) (a * d + b * c)
+theorem twistprod_con (a b c d : R) (r : RingCon R) (h1 : r a b) (h2 : r c d) :
+  r (twistProd (a,b) (c,d)).1 (twistProd (a,b) (c,d)).2 := by
+    rw [twistProd]
+    simp only
+    apply RingCon.add
+    · apply RingCon.mul
+      · exact (RingCon.eq r).mp rfl
+      · exact h2
+    · apply RingCon.mul
+      · exact (RingCon.eq r).mp rfl
+      · apply RingCon.symm
+        exact h2
+
+
+
+--   mul' : ∀ {w x y z}, r w x → r y z → r (w * y) (x * z)
+structure RingCon' (R : Type*) [Semiring R] extends AddCon R where
+  twist_mul' : ∀{w x y z}, r w x → r y z → r (w * y + x * z) (w * z + x * y)
+
+
+
+-- これで同値性を示せるかはちゃんと考えれていない
+example : (RingCon R) ≅ (RingCon' R) where
+  hom := by sorry
+  inv := by sorry
+
+-- 同値性について
+example (r : RingCon R) : ∀(w x y z : R), r w x → r y z → r (w * y + x * z) (w * z + x * y) := by
+  intro w x y z rwx ryz
+  apply RingCon.add r
+  · apply RingCon.mul r
+    · exact (RingCon.eq r).mp rfl
+    · exact ryz
+  · apply RingCon.mul r
+    · exact (RingCon.eq r).mp rfl
+    · apply RingCon.symm r
+      exact ryz
+
+-- example (r : RingCon' R) : ∀ (w x y z : R), r w x → r y z → r (w * y) (x * z) := by
+--  sorry
+
+-- T → B を 0 ↦ 0 , else ↦ 1と送ると半環準同型
+
+
 --example 2.9
 
+variable (r : RingCon R)
+-- R ⧸ r
+#check r.Quotient
+#check Semiring r.Quotient
 
---exam,ple 2.10
+
+--example 2.10
