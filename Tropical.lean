@@ -1,4 +1,3 @@
-import Tropical.Basic
 import mathlib
 
 universe u
@@ -104,7 +103,6 @@ theorem non_commutative_of_PseudoSemiring : ∃(x y : S), x + y ≠ y + x := by
 
 -- 上記の擬半環について，加法は非可換だが，乗法については可換である．
 -- 加法，乗法ともに非可換である例は存在するのだろうか？
-
 
 
 
@@ -290,9 +288,12 @@ example : Semiring (WithTop Nat) where
   natCast_zero := by sorry
   natCast_succ := by sorry
 
+#check Tropical
+
+#check Tropical (WithTop Real)
 
 -- optimization algebra
-example : Semiring (WithTop Real) where
+instance : Semiring (WithTop Real) where
   zero := ⊤
   one := 0
   add := Min.min
@@ -341,8 +342,11 @@ example : Semiring (WithTop Real) where
     intro a b c
     change Min.min a b + c = Min.min (a + c) (b + c)
     simp [min_add]
-  nsmul := by sorry
-  nsmul_zero := by sorry
+  nsmul := nsmulRec
+  nsmul_zero := by
+    intro x
+    simp [nsmulRec]
+    sorry
   nsmul_succ := by sorry
   natCast_zero := by sorry
   natCast_succ := by sorry
@@ -367,29 +371,44 @@ def twistProd : R × R → R × R → R × R
 
 --lemma 2.6
 
---theorem : ∀(a,b), (c,d) ∈ E , twistProd (c,d) (a,b) ∈ E
+--theorem :c,d ∈ R, ∀(a,b),∈ E , twistProd (c,d) (a,b) ∈ E
 
 -- r a b,r c d → r (a * c + b * d) (a * d + b * c)
-theorem twistprod_con (a b c d : R) (r : RingCon R) (h1 : r a b) (h2 : r c d) :
-  r (twistProd (a,b) (c,d)).1 (twistProd (a,b) (c,d)).2 := by
+theorem twistprod_con (a b c d : R) (r : RingCon R) (h1 : r a b) :
+  r (c * a + d * b) (c * b + d * a) := by
+    apply RingCon.add
+    · apply RingCon.mul
+      · exact (RingCon.eq r).mp rfl
+      · exact h1
+    · apply RingCon.mul
+      · exact (RingCon.eq r).mp rfl
+      · apply RingCon.symm
+        exact h1
+
+-- twistprodを用いた定義（使いにくそうなので保留）
+example (a b c d : R) (r : RingCon R) (h1 : r a b) :
+  r (twistProd (c, d) (a, b)).1 (twistProd (c, d) (a, b)).2 := by
     rw [twistProd]
     simp only
     apply RingCon.add
     · apply RingCon.mul
       · exact (RingCon.eq r).mp rfl
-      · exact h2
+      · exact h1
     · apply RingCon.mul
       · exact (RingCon.eq r).mp rfl
       · apply RingCon.symm
-        exact h2
-
+        exact h1
 
 
 --   mul' : ∀ {w x y z}, r w x → r y z → r (w * y) (x * z)
-structure RingCon' (R : Type*) [Semiring R] extends AddCon R where
+structure RingCon' (R : Type*) [Semiring R] extends Setoid R, AddCon R where
   twist_mul' : ∀{w x y z}, r w x → r y z → r (w * y + x * z) (w * z + x * y)
 
+instance : CoeFun (RingCon' R) (fun _ => R → R → Prop) where
+   coe r := r.r
 
+
+-- R × R
 
 -- これで同値性を示せるかはちゃんと考えれていない
 example : (RingCon R) ≅ (RingCon' R) where
@@ -408,10 +427,44 @@ example (r : RingCon R) : ∀(w x y z : R), r w x → r y z → r (w * y + x * z
     · apply RingCon.symm r
       exact ryz
 
--- example (r : RingCon' R) : ∀ (w x y z : R), r w x → r y z → r (w * y) (x * z) := by
---  sorry
+example (r : RingCon' R) : ∀ (w x y z : R), r w x → r y z → r (w * y) (x * z) := by
+  intro w x y z rwx ryz
+  have rxyxz : r (x * y) (x * z) := by
+    sorry
+    -- r (x * y + 0 * z) (x * z + 0 * y)
+    -- twistprod_con y z x 0 r ryz
+  have rywyx : r (y * w) (y * x) := by
+    sorry
+    -- r (y * w  + 0 * y) (y * x + 0 * w)
+    -- twistprod_con w x y 0 r rwx
+  -- この話はSemiring ではなく CommSemiring だったので後で直すこと
+  sorry
+  -- CommSemiring より y * x = x * y なので
+  -- rywxy : r (y * w) (x * y)
+  -- Setoid.trans で r (y * w) (x * z)
+  -- CommSemiring より y * w = w * y なので
+  -- r (w * y) (x * z)
+
 
 -- T → B を 0 ↦ 0 , else ↦ 1と送ると半環準同型
+def booleanization : (WithTop Real) →+* Bool :=
+  {
+    toFun := fun x => if x = 0 then 0 else 1
+    map_one' := by simp
+    map_mul' := by
+      sorry
+    map_zero' := by simp
+    map_add' := by
+      sorry
+  }
+-- instance : Semiring (WithTop Real) のnsmul周りでエラーが出ているので保留
+
+
+-- 上記の写像の核合同 ker booleanization = T×T \ {(t,0),(0,t)|t≠0} = E は極大であること
+-- note. ker f = {(a,b) | f(a) = f(b)}
+
+-- MaximalIdeal
+-- #check MaximalIdeal
 
 
 --example 2.9
