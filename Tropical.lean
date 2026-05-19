@@ -337,7 +337,7 @@ example : Semiring (WithTop Nat) where
 #check Tropical (WithTop Real)
 
 -- optimization algebra
-example : Semiring (WithTop Real) where
+instance : Semiring (WithTop Real) where
   zero := ⊤
   one := 0
   add := Min.min
@@ -448,17 +448,30 @@ example (a b c d : R) (r : RingCon R) (h1 : r a b) :
       · exact (RingCon.eq r).mp rfl
       · apply RingCon.symm
         exact h1
+<<<<<<< HEAD
 
+=======
+>>>>>>> 84aec8b2b75978adc5d60a293283a2422b57ce3d
 
 
 --   mul' : ∀ {w x y z}, r w x → r y z → r (w * y) (x * z)
 structure RingCon' (R : Type*) [Semiring R] extends Setoid R, AddCon R where
+<<<<<<< HEAD
   twist_mul' : ∀{w x y z}, r y z → r (w * y + x * z) (w * z + x * y)
 
 instance : CoeFun (RingCon' R) (fun _ => R → R → Prop) where
    coe r := r.r
+=======
+  twist_mul' : ∀{w x y z}, r w x → r y z → r (w * y + x * z) (w * z + x * y)
+>>>>>>> 84aec8b2b75978adc5d60a293283a2422b57ce3d
 
+instance : CoeFun (RingCon' R) (fun _ => R → R → Prop) where
+   coe r := r.r
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 84aec8b2b75978adc5d60a293283a2422b57ce3d
 -- R × R
 
 -- これで同値性を示せるかはちゃんと考えれていない
@@ -481,6 +494,7 @@ example (r : RingCon R) : ∀(w x y z : R), r w x → r y z → r (w * y + x * z
 example (r : RingCon' R) : ∀ (w x y z : R), r w x → r y z → r (w * y) (x * z) := by
   intro w x y z rwx ryz
   have rxyxz : r (x * y) (x * z) := by
+<<<<<<< HEAD
     rw [← add_zero (x * y), ← add_zero (x * z)]
     nth_rewrite 1 [← zero_mul z]
     nth_rewrite 2 [← zero_mul y]
@@ -515,6 +529,17 @@ example (r : RingCon' R) : ∀ (w x y z : R), r w x → r y z → r (w * y) (x *
 --  exact Setoid.trans' rywyx rxyxz
 
 
+=======
+    sorry
+    -- r (x * y + 0 * z) (x * z + 0 * y)
+    -- twistprod_con y z x 0 r ryz
+  have rywyx : r (y * w) (y * x) := by
+    sorry
+    -- r (y * w  + 0 * y) (y * x + 0 * w)
+    -- twistprod_con w x y 0 r rwx
+  -- この話はSemiring ではなく CommSemiring だったので後で直すこと
+  sorry
+>>>>>>> 84aec8b2b75978adc5d60a293283a2422b57ce3d
   -- CommSemiring より y * x = x * y なので
   -- rywxy : r (y * w) (x * y)
   -- Setoid.trans で r (y * w) (x * z)
@@ -523,11 +548,16 @@ example (r : RingCon' R) : ∀ (w x y z : R), r w x → r y z → r (w * y) (x *
 
 
 -- T → B を 0 ↦ 0 , else ↦ 1と送ると半環準同型
+<<<<<<< HEAD
 noncomputable def booleanization : 𝕋 →+* 𝔹 :=
+=======
+def booleanization : (WithTop Real) →+* Bool :=
+>>>>>>> 84aec8b2b75978adc5d60a293283a2422b57ce3d
   {
     toFun := fun x => if x = 0 then 0 else 1
     map_one' := by simp
     map_mul' := by
+<<<<<<< HEAD
       intro x y
       simp
       by_cases hx : x = 0 <;> by_cases hy : y = 0 <;> simp [hx,hy]
@@ -536,14 +566,29 @@ noncomputable def booleanization : 𝕋 →+* 𝔹 :=
       intro x y
       simp
       by_cases hx : x = 0 <;> by_cases hy : y = 0 <;> simp [hx,hy] ; rfl
+=======
+      sorry
+    map_zero' := by simp
+    map_add' := by
+      sorry
+>>>>>>> 84aec8b2b75978adc5d60a293283a2422b57ce3d
   }
 -- instance : Semiring (WithTop Real) のnsmul周りでエラーが出ているので保留
 
 
+<<<<<<< HEAD
+=======
+-- 上記の写像の核合同 ker booleanization = T×T \ {(t,0),(0,t)|t≠0} = E は極大であること
+-- note. ker f = {(a,b) | f(a) = f(b)}
+
+-- MaximalIdeal
+-- #check MaximalIdeal
+>>>>>>> 84aec8b2b75978adc5d60a293283a2422b57ce3d
 
 
 --example 2.9
 
+<<<<<<< HEAD
 -- 上記の写像の核合同 ker booleanization = T×T \ {(t,0),(0,t)|t≠0} = E は真の合同の中で極大であること
 -- note. ker f = {(a,b) | f(a) = f(b)}
 #check RingCon.ker booleanization
@@ -566,10 +611,13 @@ theorem pr : (RingHom.ker booleanization).IsMaximal := by
 
 
 
+=======
+>>>>>>> 84aec8b2b75978adc5d60a293283a2422b57ce3d
 variable (r : RingCon R)
 -- R ⧸ r
 #check r.Quotient
 #check Semiring r.Quotient
+<<<<<<< HEAD
 
 variable [CSR : CommSemiring R]
 
@@ -579,6 +627,8 @@ variable [CSR : CommSemiring R]
 -- 半環 R 上の合同関係であることを明示する場合は ⟨𝒮⟩_R と書く
 -- 合同関係の共通部分は合同関係となるため
 -- ⟨𝒮⟩ は 𝒮 を含む R 上のすべての合同関係の共通部分と言い換えられる
+=======
+>>>>>>> 84aec8b2b75978adc5d60a293283a2422b57ce3d
 
 
 --example 2.10
