@@ -3,91 +3,6 @@ import mathlib
 universe u
 
 
--- 加法についての可換性を仮定せず半環を与えたとき、これが加法について可換になるかを確認
--- したかった
--- class MySemiring (R : Type u) where
---   add : R → R → R
---   zero : R
---   mul : R → R → R
---   one : R
---   add_assoc : ∀ a b c : R, add (add a b) c = add a (add b c)
---   add_left_zero : ∀ a : R, add a zero = a
---   add_right_zero : ∀ a : R, add zero a = a
---   mul_assoc : ∀ a b c : R, mul (mul a b) c = mul a (mul b c)
---   mul_left_one : ∀ a : R, mul a one = a
---   mul_right_one : ∀ a : R, mul one a = a
---   zero_ne_one : zero ≠ one
---   left_distrib : ∀ a b c : R, mul a (add b c) = add (mul a b) (mul a c)
---   right_distrib : ∀ a b c : R, mul (add a b) c = add (mul a c) (mul b c)
---   zero_mul : ∀ a : R, mul zero a = zero
---   mul_zero : ∀ a : R, mul a zero = zero
-
--- open MySemiring
-
-#check List.any
-#print List
-#eval (true || false)
-#eval ([1,2,3] : List ℕ).head?
-#eval ([1,2,3] : List ℕ).tail
-
--- def mulBoolList : (List Bool) → (List Bool) → (List Bool)
---   | [] , _ => []
---   | _ , [] => []
---   | [x] , [y] => [x||y]
---   | [x], y₁ :: y => (mulBoolList [x] [y₁]) ++ (mulBoolList [x] y)
---   | x₁ :: x , y => (mulBoolList [x₁] y) ++ (mulBoolList x y)
-
--- def mulBoolList (l₁ l₂ : List Bool) : List Bool :=
---   l₁.flatMap (fun x => l₂.map (fun y => x || y))
-
--- #eval mulBoolList [true,false,true] [true,true,false]
--- -- [x₁,x₂,x₃] [y₁,y₂,y₃] = [x₁y₁, x₁y₂, x₁y₃, x₂y₁, x₂y₂, x₂y₃, x₃y₁, x₃y₂, x₃y₃]
--- -- となっていると思うが、AI出力なので確認できていない
-
--- #eval mulBoolList [false] [true,true,false]
--- #eval mulBoolList [true,false,false] [false]
-
--- #eval mulBoolList (mulBoolList [false,true] [false, true]) [false,true]
--- #eval mulBoolList [false,true] (mulBoolList  [false, true] [false,true])
-
--- #eval mulBoolList [false,true] ([true,false,false] ++ [true,false])
--- #eval (mulBoolList [false,true] [true,false,false]) ++ (mulBoolList [false,true] [true,false])
--- -- これは半環にならない.
--- instance instList : MySemiring (List Bool) where
---   add := List.append    -- [a,b] + [a,c] = [a,b,a,c]
---   zero := List.nil      -- [] + [a,b] = [a,b] , [a,b] + [] = [a,b]
---   mul := mulBoolList    -- [a,b] * [c,d] = [a∨c, a∨d, b∨c, b∨d]
---   one := [false]        -- [false] * [a,b] = [a,b] , [a,b] * [false] = [a,b]
---   add_assoc := by
---     intro a b c
---     simp
---   add_left_zero := by
---     intro a
---     simp
---   add_right_zero := by
---     intro a
---     simp
---   mul_assoc := by
---     intro a b c
---     sorry
---   mul_left_one := by
---     intro a
---     sorry
---   mul_right_one := by
---     intro a
---     sorry
---   zero_ne_one := by simp
---   left_distrib := by
---     intro a b c
---     sorry -- 分配法則成り立たないのでダメ
---   right_distrib := sorry
---   zero_mul := sorry
---   mul_zero := sorry
-
--- example : ∃ (a b : List Bool), add a b ≠ add b a := by
---   use [true], [false]
---   simp [add]
-
 
 -- 可換性を仮定しないモノイドの組(S,+,*)に分配法則と吸収則と0≠1を与えたものについて
 -- (これを擬半環-PseudoSemiring とする)
@@ -99,7 +14,7 @@ inductive S where
   | b : S
 deriving DecidableEq, Repr
 
-#print S
+
 
 instance : Zero S where
   zero := S.o
@@ -192,9 +107,6 @@ theorem non_commutative_of_PseudoSemiring : ∃(x y : S), x + y ≠ y + x := by
 
 
 
-#check CommGroup
-#check AddGroup
-#check Group.inv_mul_cancel
 
 
 
@@ -251,7 +163,9 @@ example [Ring R] (x y : R) : x + y = y + x := by
 #eval (0 : Bool) || (1 : Bool)
 #eval (0 : Bool) && (1 : Bool)
 
-instance : Semiring Bool where
+
+-- battingするっぽい
+example : Semiring Bool where
   add := (· || ·)
   zero := false
   mul := (· && ·)
@@ -289,14 +203,60 @@ instance : Semiring Bool where
   mul_one := by
     intro a
     cases a <;> rfl
-  nsmul := nsmulRec
+  nsmul := fun n b => if n = 0 then 0 else b
   nsmul_succ := by
     intro n x
-    rw [nsmulRec]
-    sorry
+    cases n <;> cases x <;> rfl
+  nsmul_zero := by
+    intro x
+    simp
+  natCast
+  | 0 => 0
+  | _ + 1 => 1
   natCast_succ := by
     intro n
-    sorry
+    cases n <;> simp
+    · rfl
+    · rfl
+
+
+inductive 𝔹 where
+| zero
+| one
+deriving Repr, DecidableEq
+
+instance : Zero 𝔹 where
+  zero := 𝔹.zero
+
+instance : One 𝔹 where
+  one := 𝔹.one
+
+instance : CommSemiring 𝔹 where
+  add
+  | 0, 0 => 0
+  | _, _ => 1
+
+  mul
+  | 1, 1 => 1
+  | _, _ => 0
+
+  zero_add := by intro a ; cases a <;> rfl
+  add_zero := by intro a ; cases a <;> rfl
+  add_comm := by intro a b ; cases a <;> cases b <;> rfl
+  add_assoc := by intro a b c ; cases a <;> cases b <;> cases c <;> rfl
+  one_mul := by intro a ; cases a <;> rfl
+  mul_one := by intro a ; cases a <;> rfl
+  zero_mul := by intro a ; cases a <;> rfl
+  mul_zero := by intro a ; cases a <;> rfl
+  mul_assoc := by intro a b c ; cases a <;> cases b <;> cases c <;> rfl
+  mul_comm := by intro a b ; cases a <;> cases b <;> rfl
+  left_distrib := by intro a b c ; cases a <;> cases b <;> cases c <;> rfl
+  right_distrib := by intro a b c ; cases a <;> cases b <;> cases c <;> rfl
+  nsmul
+  | 0 , _ => 0
+  | _ , b => b
+  nsmul_succ := by intro n x ; cases n <;> cases x <;> rfl
+
 
 
 -- クイックアクセス上で#diagonal_powを入力することで、検索できる
@@ -307,10 +267,6 @@ instance : Semiring Bool where
 -- 𝕋 → 𝔹
 
 -- Con
-
--- とりあえずサクッとスケッチを描くこと（今日）
-
-
 
 
 
@@ -334,23 +290,11 @@ example : Semiring (WithTop Nat) where
   add_comm := by
     intro a b
     change Min.min a b = Min.min b a
-    cases a <;> cases b
-    · rfl
-    · rfl
-    · rfl
-    · apply min_comm
+    cases a <;> cases b <;> simp [min_comm]
   add_assoc := by
     intro a b c
     change Min.min (Min.min a b) c = Min.min a (Min.min b c)
-    cases a <;> cases b <;> cases c
-    · rfl
-    · rfl
-    · rfl
-    · rfl
-    · rfl
-    · rfl
-    · rfl
-    · apply min_assoc
+    cases a <;> cases b <;> cases c <;> simp [min_assoc]
   one_mul := by
     intro a
     change 0 + a = a
@@ -370,16 +314,7 @@ example : Semiring (WithTop Nat) where
   mul_assoc := by
     intro a b c
     change a + b + c = a + (b + c)
-    cases a <;> cases b <;> cases c
-    · rfl
-    · rfl
-    · rfl
-    · rfl
-    · rfl
-    · rfl
-    · rfl
-    · apply _root_.add_assoc
-
+    cases a <;> cases b <;> cases c <;> simp[_root_.add_assoc]
   left_distrib := by
     intro a b c
     change a + Min.min b c = Min.min (a + b) (a + c)
@@ -388,12 +323,18 @@ example : Semiring (WithTop Nat) where
     intro a b c
     change Min.min a b + c = Min.min (a + c) (b + c)
     cases a <;> cases b <;> cases c <;> simp [min_add]
-  nsmul := by sorry
-  nsmul_zero := by sorry
+  nsmul := nsmulRec
+  nsmul_zero := by
+    intro x
+    simp [nsmulRec]
+    sorry
   nsmul_succ := by sorry
   natCast_zero := by sorry
   natCast_succ := by sorry
 
+#check Tropical
+
+#check Tropical (WithTop Real)
 
 -- optimization algebra
 example : Semiring (WithTop Real) where
@@ -445,14 +386,23 @@ example : Semiring (WithTop Real) where
     intro a b c
     change Min.min a b + c = Min.min (a + c) (b + c)
     simp [min_add]
-  nsmul := by sorry
-  nsmul_zero := by sorry
+  nsmul := nsmulRec
+  nsmul_zero := by
+    intro x
+    simp [nsmulRec]
+    sorry
   nsmul_succ := by sorry
   natCast_zero := by sorry
   natCast_succ := by sorry
 
+abbrev 𝕋 := Tropical (WithTop Real)
 
-variable {R : Type*} [Semiring R]
+noncomputable instance : CommSemiring 𝕋 := by
+  exact Tropical.instCommSemiring
+
+
+
+variable {R : Type*} [CommSemiring R]
 --definition 2.4
 
 
@@ -471,37 +421,202 @@ def twistProd : R × R → R × R → R × R
 
 --lemma 2.6
 
---theorem : ∀(a,b), (c,d) ∈ E , twistProd (c,d) (a,b) ∈ E
+--theorem :c,d ∈ R, ∀(a,b),∈ E , twistProd (c,d) (a,b) ∈ E
 
 -- r a b,r c d → r (a * c + b * d) (a * d + b * c)
-theorem twistprod_con (a b c d : R) (r : RingCon R) (h1 : r a b) (h2 : r c d) :
-  r (twistProd (a,b) (c,d)).1 (twistProd (a,b) (c,d)).2 := by
+theorem twistprod_con (a b c d : R) (r : RingCon R) (h1 : r a b) :
+  r (c * a + d * b) (c * b + d * a) := by
+    apply RingCon.add
+    · apply RingCon.mul
+      · exact (RingCon.eq r).mp rfl
+      · exact h1
+    · apply RingCon.mul
+      · exact (RingCon.eq r).mp rfl
+      · apply RingCon.symm
+        exact h1
+
+-- twistprodを用いた定義（使いにくそうなので保留）
+example (a b c d : R) (r : RingCon R) (h1 : r a b) :
+  r (twistProd (c, d) (a, b)).1 (twistProd (c, d) (a, b)).2 := by
     rw [twistProd]
     simp only
     apply RingCon.add
     · apply RingCon.mul
       · exact (RingCon.eq r).mp rfl
-      · exact h2
+      · exact h1
     · apply RingCon.mul
       · exact (RingCon.eq r).mp rfl
       · apply RingCon.symm
-        exact h2
+        exact h1
 
 
 
 --   mul' : ∀ {w x y z}, r w x → r y z → r (w * y) (x * z)
-structure RingCon' (R : Type*) [Semiring R] extends AddCon R where
-  twist_mul' : ∀{w x y z}, r w x → r y z → r (w * y + x * z) (w * z + x * y)
+structure RingCon' (R : Type*) [Semiring R] extends Setoid R, AddCon R where
+  twist_mul' : ∀{w x y z}, r y z → r (w * y + x * z) (w * z + x * y)
+
+instance : CoeFun (RingCon' R) (fun _ => R → R → Prop) where
+   coe r := r.r
 
 
+-- R × R
+
+-- これで同値性を示せるかはちゃんと考えれていない
 example : (RingCon R) ≅ (RingCon' R) where
   hom := by sorry
   inv := by sorry
 
+-- 同値性について
+example (r : RingCon R) : ∀(w x y z : R), r w x → r y z → r (w * y + x * z) (w * z + x * y) := by
+  intro w x y z rwx ryz
+  apply RingCon.add r
+  · apply RingCon.mul r
+    · exact (RingCon.eq r).mp rfl
+    · exact ryz
+  · apply RingCon.mul r
+    · exact (RingCon.eq r).mp rfl
+    · apply RingCon.symm r
+      exact ryz
+
+example (r : RingCon' R) : ∀ (w x y z : R), r w x → r y z → r (w * y) (x * z) := by
+  intro w x y z rwx ryz
+  have rxyxz : r (x * y) (x * z) := by
+    rw [← add_zero (x * y), ← add_zero (x * z)]
+    nth_rewrite 1 [← zero_mul z]
+    nth_rewrite 2 [← zero_mul y]
+    apply RingCon'.twist_mul'
+    exact ryz
+    --apply twistprod_con y z x 0 r ryz
+    -- r (x * y + 0 * z) (x * z + 0 * y)
+    -- twistprod_con y z x 0 r ryz
+  have rywyx : r (y * w) (y * x) := by
+    rw [← add_zero (y * w), ← add_zero (y * x)]
+    nth_rewrite 1 [← zero_mul x]
+    nth_rewrite 2 [← zero_mul w]
+    apply RingCon'.twist_mul'
+    exact rwx
+    -- r (y * w  + 0 * y) (y * x + 0 * w)
+    -- twistprod_con w x y 0 r rwx
+  -- この話はSemiring ではなく CommSemiring だったので後で直すこと
+  nth_rewrite 1 [mul_comm]
+  --rw [Setoid.trans' rywyx]
+  nth_rewrite 2 [mul_comm] at rywyx
+  --memo
+  -- xy = X,xz = Y,yw = Z
+  -- rxyxz = rXY
+  -- rywyx = rZX
+  -- ⊢ rZY
+  -- trans rZX rXY = rZY
+  apply Setoid.trans'
+  · exact rywyx
+  · exact rxyxz
+
+
+--  exact Setoid.trans' rywyx rxyxz
+
+
+  -- CommSemiring より y * x = x * y なので
+  -- rywxy : r (y * w) (x * y)
+  -- Setoid.trans で r (y * w) (x * z)
+  -- CommSemiring より y * w = w * y なので
+  -- r (w * y) (x * z)
+
+
+-- T → B を 0 ↦ 0 , else ↦ 1と送ると半環準同型
+noncomputable def booleanization : 𝕋 →+* 𝔹 :=
+  {
+    toFun := fun x => if x = 0 then 0 else 1
+    map_one' := by simp
+    map_mul' := by
+      intro x y
+      simp
+      by_cases hx : x = 0 <;> by_cases hy : y = 0 <;> simp [hx,hy]
+    map_zero' := by simp
+    map_add' := by
+      intro x y
+      simp
+      by_cases hx : x = 0 <;> by_cases hy : y = 0 <;> simp [hx,hy] ; rfl
+  }
+-- instance : Semiring (WithTop Real) のnsmul周りでエラーが出ているので保留
+
+
+
 
 --example 2.9
 
+-- 上記の写像の核合同 ker booleanization = T×T \ {(t,0),(0,t)|t≠0} = E は真の合同の中で極大であること
+-- note. ker f = {(a,b) | f(a) = f(b)}
+#check RingCon.ker booleanization
+#check Ideal.IsMaximal
+#check RingHom.ker_isMaximal_of_surjective
+#check (RingHom.ker booleanization).IsMaximal
+#check IsLocalRing.maximalIdeal
 
+variable {F : Type*} [CommSemiring R] [CommSemiring S]
+variable [FunLike F R S] [RingHomClass F R S] (f : F) {I : Ideal R}
+
+
+
+theorem pr : (RingHom.ker booleanization).IsMaximal := by
+  sorry
+
+-- MaximalIdeal
+-- #check MaximalIdeal
+
+
+
+
+variable (r : RingCon R)
+-- R ⧸ r
+#check r.Quotient
+#check Semiring r.Quotient
+
+variable [CSR : CommSemiring R]
+
+-- ∀𝒮 ⊆ R × R
+-- congruence generated by 𝒮
+-- ⇔ 𝒮 を含む R 上の合同関係のうち最小のもの ≝ ⟨𝒮⟩
+-- 半環 R 上の合同関係であることを明示する場合は ⟨𝒮⟩_R と書く
+-- 合同関係の共通部分は合同関係となるため
+-- ⟨𝒮⟩ は 𝒮 を含む R 上のすべての合同関係の共通部分と言い換えられる
 
 
 --example 2.10
+
+
+-- ev₀ : R[X] →+* R ; f(X) ↦ f(0)
+-- ⇒ ker ev₀ = ⟨(x,0)⟩ が成り立つ
+
+-- proof. (x,0) ∈ ker ev₀ より
+-- ⟨(x,0)⟩ ⊆ ker ev₀
+-- ∀ f ∈ R[X] ; (f(x),f(0)) ∈ ⟨(x,0)⟩
+-- ∵ ∀ a ∈ R , ∀ d ≥ 1
+--    (a x^d, 0) = twistProd (a x^(d-1),0) (x, 0) ∈ ⟨(x, 0)⟩
+--    f(x) = Σ a_d x^d と書くと
+--    (f(x), f(0)) = (Σ a_d x^d, a_0)
+--                 = (a_0, a_0) + Σ (a_d x^d, 0) ∈ ⟨(x, 0)⟩
+-- ∀ g ∈ ker ev₀,
+-- ⇒ f(0) = g(0)
+-- ⇒ (f(x), f(0)), (g(0), g(x)) ∈ ⟨(x,0)⟩
+-- ⇒ (f(x), g(x)) ∈ ⟨(x,0)⟩
+-- ⇒ ker ev₀ ⊆ ⟨(x, 0)⟩
+-- ∴ ker ev₀ = ⟨(x, 0)⟩
+
+
+open Polynomial
+def ev₀ : R[X] →+* R := @Polynomial.evalRingHom R CSR (0 : R)
+-- Polynomial.evalRingHom (0 : R) では，型推論の参照先がズレてしまう
+-- らしいので，明示的に記述している．
+-- memo. CommSemiring Rなどの型を命名するときの命名規則を確認すること ： CSRについて
+
+example : RingCon.ker ev₀ = RingConGen.Rel {(X : R[X], (0 : R))} := by
+  sorry
+
+
+--lemma 2.11
+
+
+
+--corollary 2.12
+
+--lemma 2.13
