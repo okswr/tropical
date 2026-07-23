@@ -313,7 +313,7 @@ def chainCon (C : RingReflSymm R) : RingCon R where
   r := TransGen C.r
   iseqv :=
     { refl := fun a => TransGen.single (C.refl a)
-      symm := fun h => sorry
+      symm := fun h => TransGen.symmetric (fun x y => C.symm) h
       trans := fun h h' => h.trans h' }
   mul' := fun h h' => transGen_mul C h h'
   add' := fun h h' => transGen_add C h h'
@@ -322,7 +322,117 @@ def chainCon (C : RingReflSymm R) : RingCon R where
 theorem ringConGen_eq_TransGen (C : RingReflSymm R) (f g : R) :
     ringConGen C.r f g ↔ TransGen C.r f g := by
   constructor
-  · sorry
-  · sorry
+  · intros h
+    have hle : ringConGen C.r ≤ chainCon C :=
+      RingCon.ringConGen_le (fun x y hxy => TransGen.single hxy)
+    exact hle h
+  · intros h
+    induction h with
+    | single hxy => exact RingConGen.Rel.of _ _ hxy
+    | tail _ hbc ih => exact ih.trans (RingConGen.Rel.of _ _ hbc)
 
 end SemiringCongruence'
+
+-- Colorrary 2.12
+-- Suppose E is a finitely generated congruence on a semiring R, say E =
+-- ⟨(a1, b1), ..., (ak, bk)⟩. Let S⊆R × R denote the collection of all pairs of the form
+-- (Σ[m,n ∈ ℤᵏ≥0] rm,n aᵐ bⁿ, Σ[m,n ∈ ℤᵏ≥0] rm,n aⁿ bᵐ)
+-- where all but finitely many rm,n ∈ R are zero. Then E consists of all pairs (f, g) for
+-- which there exists a finite transitive chain (f, r1), (r1, r2), ..., (rn−1, rn), (rn, g) ∈S.
+
+
+-- 系 2.12
+
+-- E を半環 R 上の有限生成合同関係とする。すなわち、
+-- E = ⟨(a1, b1), ..., (ak, bk)⟩
+-- とする。
+
+-- S⊆R×R を、次の形のすべての組からなる集合とする。
+
+-- (Σ[m,n ∈ ℤᵏ≥0] rm,n aᵐ bⁿ, Σ[m,n ∈ ℤᵏ≥0] rm,n aⁿ bᵐ)
+
+-- rm,n ∈R は有限個を除いてすべて 0 であるものとする。
+
+-- このとき、合同関係 E は、有限な推移鎖
+
+-- (f, r1), (r1, r2), ..., (rn−1, rn), (rn, g) ∈S
+
+-- が存在するようなすべての組 (f,g) からなる。
+
+
+variable {R : Type*}[Semiring R]
+#check R[X][X]
+#check Polynomial R
+#check Polynomial (Polynomial R)
+#check monomial
+
+-- Σ[m,n ∈ ℤᵏ≥0] rm,n aᵐ bⁿ
+
+namespace test
+
+variable {R : Type*} [CommSemiring R]
+
+
+
+-- Σ[m,n ∈ ℤᵏ≥0] rm,n aᵐ bⁿ ;rm,nは有限個を除いてゼロ　を表すための定義を与える
+-- def r_mn_ambn (a b : Fin k → R) {m n : Fin k → ℕ} (r : ℕ → ℕ → R)
+--   (h : ∃(i j : ℕ), ∀(i' j' : ℕ), i < i' → j < j' → r i' j' = 0) : R :=
+--     Polynomial.eval (0 : R)
+
+
+-- a,b ∈ R,Σ[m,n ∈ ℤ≥0] rm,n aᵐ bⁿ
+noncomputable def temp (k : ℕ) (pol : R[X][X]) (a b : R)
+  (h : ∃ (i j : ℕ), max i j < k → (pol.coeff k).coeff k = 0) : R
+  := (pol.eval (Polynomial.C a)).eval b
+
+-- a,b ∈ Rᵏ,Σ[m,n ∈ ℤᵏ≥0] rm,n aᵐ bⁿ
+noncomputable def r_mn_ambn_to_R (k : ℕ) (pol : (Fin k → R)[X][X]) (a b : Fin k → R)
+  (h : ∃ (i j : ℕ), max i j < k → (pol.coeff k).coeff k = 0) : R
+  := ∏ n : Fin k,((pol.eval (Polynomial.C a)).eval b) n
+-- もしかしたらr_mnがk乗されてしまってるかもしれないので確認した方が良い
+-- が、与えたr_mnを予め1/k乗させておけばよいので定理の証明としては問題ない
+
+noncomputable def r_mn_anbm_to_R (k : ℕ) (pol : (Fin k → R)[X][X]) (a b : Fin k → R)
+  (h : ∃ (i j : ℕ), max i j < k → (pol.coeff k).coeff k = 0) : R
+  := ∏ n : Fin k,((pol.eval (Polynomial.C b)).eval a) n
+
+def tempSet (k : ℕ) (pol : (Fin k → R)[X][X]) (a b : Fin k → R) : Set (R × R) :=
+  {(r_mn_ambn_to_R k pol a b, r_mn_anbm_to_R k pol a b) : (R × R) | pol a b }
+
+
+
+end test
+
+
+
+
+namespace FinitelyGeneratedCongruence
+variable {R : Type*} [Semiring R] {k : ℕ}
+/--
+The monomial `aᵐ bⁿ`, multiplied in increasing coordinate order.  Using an
+ordered list makes the definition valid even when the semiring is noncommutative.
+-/
+def abMonomial (a b : Fin k → R) (m n : Fin k → ℕ) : R :=
+  (List.ofFn fun i => a i ^ m i * b i ^ n i).prod
+/--
+The displayed pair
+`(∑ m,n, r m n * aᵐ bⁿ, ∑ m,n, r m n * aⁿ bᵐ)`.
+A finitely supported function is used for `r`, so the requirement that all but
+finitely many coefficients vanish is built into its type.
+-/
+def swappedSumPair (a b : Fin k → R)
+    (r : ((Fin k → ℕ) × (Fin k → ℕ)) →₀ R) : R × R :=
+  (∑ p ∈ r.support, r p * abMonomial a b p.1 p.2,
+   ∑ p ∈ r.support, r p * abMonomial a b p.2 p.1)
+/-- The collection of all pairs represented by the displayed finite sums. -/
+def swappedSumPairs (a b : Fin k → R) : Set (R × R) :=
+  Set.range (swappedSumPair a b)
+/-- Membership spells out precisely the existence of finitely supported coefficients. -/
+theorem mem_swappedSumPairs_iff (a b : Fin k → R) (x y : R) :
+    (x, y) ∈ swappedSumPairs a b ↔
+      ∃ r : ((Fin k → ℕ) × (Fin k → ℕ)) →₀ R,
+        x = (∑ p ∈ r.support, r p * abMonomial a b p.1 p.2) ∧
+        y = (∑ p ∈ r.support, r p * abMonomial a b p.2 p.1) := by
+  simp only [swappedSumPairs, Set.mem_range, swappedSumPair,
+    Prod.mk.injEq, eq_comm]
+end FinitelyGeneratedCongruence
