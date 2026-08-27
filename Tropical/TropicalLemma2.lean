@@ -351,6 +351,7 @@ end SemiringCongruence'
 
 -- (Σ[m,n ∈ ℤᵏ≥0] rm,n aᵐ bⁿ, Σ[m,n ∈ ℤᵏ≥0] rm,n aⁿ bᵐ)
 
+-- rₘ,ₙ
 -- rm,n ∈R は有限個を除いてすべて 0 であるものとする。
 
 -- このとき、合同関係 E は、有限な推移鎖
@@ -360,7 +361,7 @@ end SemiringCongruence'
 -- が存在するようなすべての組 (f,g) からなる。
 
 
-variable {R : Type*}[Semiring R]
+variable {R : Type*} [Semiring R]
 #check R[X][X]
 #check Polynomial R
 #check Polynomial (Polynomial R)
@@ -379,11 +380,13 @@ variable {R : Type*} [CommSemiring R]
 --   (h : ∃(i j : ℕ), ∀(i' j' : ℕ), i < i' → j < j' → r i' j' = 0) : R :=
 --     Polynomial.eval (0 : R)
 
+-- R[X][Y]
 
 -- a,b ∈ R,Σ[m,n ∈ ℤ≥0] rm,n aᵐ bⁿ
 noncomputable def temp (k : ℕ) (pol : R[X][X]) (a b : R)
   (h : ∃ (i j : ℕ), max i j < k → (pol.coeff k).coeff k = 0) : R
   := (pol.eval (Polynomial.C a)).eval b
+
 
 -- a,b ∈ Rᵏ,Σ[m,n ∈ ℤᵏ≥0] rm,n aᵐ bⁿ
 noncomputable def r_mn_ambn_to_R (k : ℕ) (pol : (Fin k → R)[X][X]) (a b : Fin k → R)
@@ -396,10 +399,11 @@ noncomputable def r_mn_anbm_to_R (k : ℕ) (pol : (Fin k → R)[X][X]) (a b : Fi
   (h : ∃ (i j : ℕ), max i j < k → (pol.coeff k).coeff k = 0) : R
   := ∏ n : Fin k,((pol.eval (Polynomial.C b)).eval a) n
 
-def tempSet (k : ℕ) (pol : (Fin k → R)[X][X]) (a b : Fin k → R) : Set (R × R) :=
-  {(r_mn_ambn_to_R k pol a b, r_mn_anbm_to_R k pol a b) : (R × R) | pol a b }
+def tempSet (k : ℕ) (pol : (Fin k → R)[X][X]) (a b : Fin k → R)
+  (h : ∃ (i j : ℕ), max i j < k → (pol.coeff k).coeff k = 0) : Set (R × R) :=
+  {p : (R × R) | p = (r_mn_ambn_to_R k pol a b h, r_mn_anbm_to_R k pol a b h)}
 
-
+-- r_mn_ambn_to_R k pol a b h ,
 
 end test
 
