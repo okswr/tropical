@@ -451,6 +451,10 @@ example (a b c d : R) (r : RingCon R) (h1 : r a b) :
       · exact (RingCon.eq r).mp rfl
       · apply RingCon.symm
         exact h1
+<<<<<<< HEAD
+
+=======
+>>>>>>> 84aec8b2b75978adc5d60a293283a2422b57ce3d
 
 
 
@@ -464,7 +468,10 @@ instance : CoeFun (RingCon' R) (fun _ => R → R → Prop) where
 instance : CoeFun (RingCon' R) (fun _ => R → R → Prop) where
    coe r := r.r
 
+<<<<<<< HEAD
+=======
 
+>>>>>>> 84aec8b2b75978adc5d60a293283a2422b57ce3d
 -- R × R
 
 
@@ -537,11 +544,14 @@ noncomputable def booleanization : 𝕋 →+* 𝔹 :=
   }
 
 
+<<<<<<< HEAD
+=======
 -- 上記の写像の核合同 ker booleanization = T×T \ {(t,0),(0,t)|t≠0} = E は極大であること
 -- note. ker f = {(a,b) | f(a) = f(b)}
 
 -- MaximalIdeal
 -- #check MaximalIdeal
+>>>>>>> 84aec8b2b75978adc5d60a293283a2422b57ce3d
 
 
 --example 2.9
@@ -638,6 +648,31 @@ theorem pr : IsCoatom (RingCon.ker booleanization):= by
 -- E_B ⊆ E
 -- E_B は極大より E_B = E
 
+<<<<<<< HEAD
+-- 上記の写像の核合同 ker booleanization = T×T \ {(t,0),(0,t)|t≠0} = E は真の合同の中で極大であること
+-- note. ker f = {(a,b) | f(a) = f(b)}
+#check RingCon.ker booleanization
+#check Ideal.IsMaximal
+#check RingHom.ker_isMaximal_of_surjective
+#check (RingHom.ker booleanization).IsMaximal
+#check IsLocalRing.maximalIdeal
+
+variable {F : Type*} [CommSemiring R] [CommSemiring S]
+variable [FunLike F R S] [RingHomClass F R S] (f : F) {I : Ideal R}
+
+
+
+theorem pr : (RingHom.ker booleanization).IsMaximal := by
+  sorry
+
+-- MaximalIdeal
+-- #check MaximalIdeal
+
+
+
+
+=======
+>>>>>>> 84aec8b2b75978adc5d60a293283a2422b57ce3d
 variable (r : RingCon R)
 -- R ⧸ r
 #check r.Quotient
