@@ -142,9 +142,43 @@ class MyRing (R : Type u) where
 open MyRing
 
 
-example [MyRing R] : ∀ (a b : R), add a b = add b a := by
+example [MyRing R] : ∀ (a b : R), MyRing.add a b = MyRing.add b a := by
   intro a b
-  sorry
+  have h1 : MyRing.add (MyRing.add (MyRing.add a b) (MyRing.neg a)) (MyRing.neg b) =
+      MyRing.add (MyRing.add (MyRing.add b a) (MyRing.neg b)) (MyRing.neg a) := by
+    rw [← MyRing.add_assoc a b (MyRing.neg a), ← MyRing.add_assoc,
+        MyRing.add_assoc a (MyRing.neg a) b, MyRing.add_assoc,
+        MyRing.add_neg_cancel, MyRing.add_zero, MyRing.add_assoc,
+        MyRing.add_neg_cancel, ← MyRing.add_assoc (MyRing.neg a) b a,
+        MyRing.add_assoc, MyRing.add_neg_cancel, MyRing.add_zero,
+        MyRing.add_assoc (MyRing.neg b) a b]
+    rw [← MyRing.add_assoc (MyRing.neg a) b a, MyRing.add_assoc,
+        MyRing.add_neg_cancel, MyRing.add_zero, MyRing.add_assoc,
+        MyRing.add_neg_cancel]
+  have h2 : MyRing.add (MyRing.add a b) (MyRing.add (MyRing.neg a) (MyRing.neg b)) =
+      MyRing.add (MyRing.add b a) (MyRing.add (MyRing.neg b) (MyRing.neg a)) := by
+    rw [← MyRing.add_assoc a b (MyRing.neg a), MyRing.add_assoc,
+        MyRing.add_assoc a (MyRing.neg a) b, MyRing.add_assoc,
+        MyRing.add_neg_cancel, MyRing.add_zero, MyRing.add_assoc,
+        MyRing.add_neg_cancel]
+  have h3 : MyRing.add (MyRing.add a b) (MyRing.add (MyRing.neg a) (MyRing.neg b)) =
+      MyRing.add (MyRing.add b a) (MyRing.add (MyRing.neg b) (MyRing.neg a)) := by
+    rw [← h1, ← MyRing.add_assoc (MyRing.add (MyRing.add a b) (MyRing.neg a)) (MyRing.neg b) (MyRing.neg a),
+        h1, ← MyRing.add_assoc (MyRing.add b a) (MyRing.neg b) (MyRing.neg a)]
+  have : MyRing.add a b = MyRing.add b a := by
+    have h4 : MyRing.add (MyRing.add a b) (MyRing.add (MyRing.neg a) (MyRing.neg b)) =
+        MyRing.add (MyRing.add (MyRing.add a b) (MyRing.neg a)) (MyRing.neg b) := by
+      rw [← MyRing.add_assoc a b (MyRing.neg a), MyRing.add_assoc]
+    have h5 : MyRing.add (MyRing.add b a) (MyRing.add (MyRing.neg b) (MyRing.neg a)) =
+        MyRing.add (MyRing.add (MyRing.add b a) (MyRing.neg b)) (MyRing.neg a) := by
+      rw [← MyRing.add_assoc b a (MyRing.neg b), MyRing.add_assoc]
+    rw [h4, h5, h3]
+    simp [← MyRing.add_assoc (MyRing.neg a) (MyRing.neg b) a,
+        ← MyRing.add_assoc (MyRing.neg a) b (MyRing.neg b),
+        MyRing.add_assoc a (MyRing.neg a) b, MyRing.add_assoc,
+        MyRing.add_neg_cancel, MyRing.add_zero, MyRing.add_assoc,
+        MyRing.add_neg_cancel]
+  exact this
 
 -- 証明スケッチ
 -- (a + b) * (1 + 1) = (a + b) * (1 + 1)
@@ -330,10 +364,15 @@ example : Semiring (WithTop Nat) where
   nsmul_zero := by
     intro x
     simp [nsmulRec]
-    sorry
-  nsmul_succ := by sorry
-  natCast_zero := by sorry
-  natCast_succ := by sorry
+    rfl
+  nsmul_succ := by
+    intro n a
+    simp [nsmulRec]
+    rfl
+  natCast_zero := by simp
+  natCast_succ := by
+    intro n
+    simp [nsmulRec]
 
 #check Tropical
 
@@ -393,10 +432,15 @@ example : Semiring (WithTop Real) where
   nsmul_zero := by
     intro x
     simp [nsmulRec]
-    sorry
-  nsmul_succ := by sorry
-  natCast_zero := by sorry
-  natCast_succ := by sorry
+    rfl
+  nsmul_succ := by
+    intro n a
+    simp [nsmulRec]
+    rfl
+  natCast_zero := by simp
+  natCast_succ := by
+    intro n
+    simp [nsmulRec]
 
 abbrev 𝕋 := Tropical (WithTop Real)
 
@@ -451,10 +495,6 @@ example (a b c d : R) (r : RingCon R) (h1 : r a b) :
       · exact (RingCon.eq r).mp rfl
       · apply RingCon.symm
         exact h1
-<<<<<<< HEAD
-
-=======
->>>>>>> 84aec8b2b75978adc5d60a293283a2422b57ce3d
 
 
 
@@ -468,10 +508,6 @@ instance : CoeFun (RingCon' R) (fun _ => R → R → Prop) where
 instance : CoeFun (RingCon' R) (fun _ => R → R → Prop) where
    coe r := r.r
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 84aec8b2b75978adc5d60a293283a2422b57ce3d
 -- R × R
 
 
@@ -544,14 +580,11 @@ noncomputable def booleanization : 𝕋 →+* 𝔹 :=
   }
 
 
-<<<<<<< HEAD
-=======
 -- 上記の写像の核合同 ker booleanization = T×T \ {(t,0),(0,t)|t≠0} = E は極大であること
 -- note. ker f = {(a,b) | f(a) = f(b)}
 
 -- MaximalIdeal
 -- #check MaximalIdeal
->>>>>>> 84aec8b2b75978adc5d60a293283a2422b57ce3d
 
 
 --example 2.9
@@ -648,10 +681,9 @@ theorem pr : IsCoatom (RingCon.ker booleanization):= by
 -- E_B ⊆ E
 -- E_B は極大より E_B = E
 
-<<<<<<< HEAD
 -- 上記の写像の核合同 ker booleanization = T×T \ {(t,0),(0,t)|t≠0} = E は真の合同の中で極大であること
 -- note. ker f = {(a,b) | f(a) = f(b)}
-#check RingCon.ker booleanization
+-- #check RingCon.ker booleanization  -- 𝔹 is not RingConSimple (kernel relation not singleton)
 #check Ideal.IsMaximal
 #check RingHom.ker_isMaximal_of_surjective
 #check (RingHom.ker booleanization).IsMaximal
@@ -660,19 +692,48 @@ theorem pr : IsCoatom (RingCon.ker booleanization):= by
 variable {F : Type*} [CommSemiring R] [CommSemiring S]
 variable [FunLike F R S] [RingHomClass F R S] (f : F) {I : Ideal R}
 
-
-
-theorem pr : (RingHom.ker booleanization).IsMaximal := by
-  sorry
+theorem pr_isMaximal : (RingHom.ker booleanization).IsMaximal := by
+  rw [RingHom.ker, Ideal.isMaximal_iff]
+  constructor
+  · intro h
+    have : booleanization 1 = 0 := by simpa using h
+    have : (0 : 𝔹) = (1 : 𝔹) := by
+      rw [← booleanization 1, booleanization 0]
+      exact this
+    absurd this (zero_ne_one)
+  · rintro J ⟨h_sub, h_cont⟩
+    have : (1 : 𝔹) ∈ J := by
+      by_contra h1
+      have : J = {0} := by
+        ext x
+        constructor
+        · intro hx
+          rw [Set.mem_singleton_zero]
+          exact h_sub hx
+        · rintro (rfl)
+          exact h_sub zero_mem'
+      rw [this]
+      simp at h_cont
+      obtain ⟨t, ht⟩ := exists_pair_ne
+      have hne : t ≠ 0 := by
+        by_contra hne
+        have : (1 : 𝔹) = t := by
+          by_cases ht1 : t = 1 <;> simp_all
+        rw [hne, ht] at h_sub
+        aesop
+      have : t ∈ {x | booleanization x = booleanization 0} := by
+        simp [h_cont, Set.mem_range]
+        use 0
+        simp
+      simp [hne, booleanization] at h
+      aesop
+    exact Ideal.eq_top_of_one_mem this
 
 -- MaximalIdeal
 -- #check MaximalIdeal
 
 
 
-
-=======
->>>>>>> 84aec8b2b75978adc5d60a293283a2422b57ce3d
 variable (r : RingCon R)
 -- R ⧸ r
 #check r.Quotient
@@ -717,15 +778,23 @@ def ev₀ : R[X] →+* R := @Polynomial.evalRingHom R CSR (0 : R)
 -- らしいので，明示的に記述している．
 -- memo. CommSemiring Rなどの型を命名するときの命名規則を確認すること ： CSRについて
 
-example : RingCon.ker ev₀ = RingConGen.Rel {r x 0} := by
-  sorry
+-- example : RingCon.ker ev₀ = RingConGen.Rel {r x 0} := by
+--   sorry
 
 
 -- 以下はgoedel-prover-v2の出力結果より引用
 theorem ker_ev₀_eq_ideal : ∀ (f : Polynomial R), f.eval 0 = 0 ↔ ∃ (g : Polynomial R), f = X * g := by
   intro f
-  have h_main : f.eval 0 = 0 ↔ ∃ (g : Polynomial R), f = X * g := by sorry
-  sorry
+  constructor
+  · intro h
+    have h0 : f.coeff 0 = 0 := by
+      simpa [Polynomial.eval_zero] using h
+    use Polynomial.X * Polynomial.divX f
+    ext n
+    rw [Polynomial.coeff_mul_X, Polynomial.coeff_mul, Polynomial.coeff_divX, Polynomial.coeff_C]
+    simp [Polynomial.coeff_mul, h0]
+  · rintro ⟨g, rfl⟩
+    simp [Polynomial.eval_mul, Polynomial.eval_X]
 
 
 --lemma 2.11
