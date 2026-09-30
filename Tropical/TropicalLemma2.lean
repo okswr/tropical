@@ -243,7 +243,7 @@ end SemiringCongruence
 
 -- ヒルベルトの零点定理　：　目標
 
-namespace SemiringCongruence'
+namespace SemiringCongruence2
 
 variable (R : Type*) [Semiring R]
 
@@ -331,7 +331,7 @@ theorem ringConGen_eq_TransGen (C : RingReflSymm R) (f g : R) :
     | single hxy => exact RingConGen.Rel.of _ _ hxy
     | tail _ hbc ih => exact ih.trans (RingConGen.Rel.of _ _ hbc)
 
-end SemiringCongruence'
+end SemiringCongruence2
 
 -- Colorrary 2.12
 -- Suppose E is a finitely generated congruence on a semiring R, say E =
@@ -395,15 +395,56 @@ noncomputable def r_mn_ambn_to_R (k : ℕ) (pol : (Fin k → R)[X][X]) (a b : Fi
 -- もしかしたらr_mnがk乗されてしまってるかもしれないので確認した方が良い
 -- が、与えたr_mnを予め1/k乗させておけばよいので定理の証明としては問題ない
 
+-- a,b ∈ Rᵏ,Σ[m,n ∈ ℤᵏ≥0] rm,n aⁿ bᵐ
 noncomputable def r_mn_anbm_to_R (k : ℕ) (pol : (Fin k → R)[X][X]) (a b : Fin k → R)
   (h : ∃ (i j : ℕ), max i j < k → (pol.coeff k).coeff k = 0) : R
   := ∏ n : Fin k,((pol.eval (Polynomial.C b)).eval a) n
 
+-- {(Σ[m,n ∈ ℤᵏ≥0] rm,n aᵐ bⁿ, Σ[m,n ∈ ℤᵏ≥0] rm,n aⁿ bᵐ)}∈ tempSet : R × R
 def tempSet (k : ℕ) (pol : (Fin k → R)[X][X]) (a b : Fin k → R)
   (h : ∃ (i j : ℕ), max i j < k → (pol.coeff k).coeff k = 0) : Set (R × R) :=
   {p : (R × R) | p = (r_mn_ambn_to_R k pol a b h, r_mn_anbm_to_R k pol a b h)}
 
 -- r_mn_ambn_to_R k pol a b h ,
+-- tempSet(名称は後でちゃんとつける)より集合Sを定義した。
+
+-- 以下の命題を与え、証明を行う。
+-- E を半環 R 上の有限生成合同関係とする。すなわち、
+-- E = ⟨(a1, b1), ..., (ak, bk)⟩
+-- とする。
+-- このとき、合同関係 E は、有限な推移鎖
+-- (f, r1), (r1, r2), ..., (rn−1, rn), (rn, g) ∈S
+-- が存在するようなすべての組 (f,g) からなる。
+
+-- chatgptにより生成された定義
+-- def generatedCon (k : ℕ) (a b : Fin k → R) : RingCon R :=
+--   sInf {C : RingCon R | ∀ i : Fin k, C (a i) (b i)}
+--
+
+def generatedCon (k : ℕ) (a b : Fin k → R) : RingCon R :=
+  ringConGen (fun x y => ∀ i : Fin k, x = a i ∧ y = b i)
+
+-- copilotの提案を参考に作成された定理
+theorem th212 (k : ℕ) (pol : (Fin k → R)[X][X]) (a b : Fin k → R)
+  (h : ∃ (i j : ℕ), max i j < k → (pol.coeff k).coeff k = 0) :
+  let S := tempSet k pol a b h
+  let E := generatedCon k a b
+  -- E f g ⇔ (f, g) ∈ E
+  -- Relation.TransGen (fun x y : R => (x, y) ∈ S) f g ⇔ f,gをSの元で結ぶ有限な推移鎖が存在する
+  -- ⇔ ∃ r1,r2,...,rn : R, (f, r1), (r1, r2), ..., (rn−1, rn), (rn, g) ∈ S
+  ∀ f g : R, E f g ↔ TransGen (fun x y : R => (x, y) ∈ S) f g := by
+  intros S E f g
+--  exact SemiringCongruence2.ringConGen_eq_TransGen E
+-- 方針：上記のC.rに(fun x y => ∀ i : Fin k, x = a i ∧ y = b i)、(fun x y : R => (x, y) ∈ S)を与えたい。　
+-- この二つが同値であることを示せば、th211(ringConGen_eq_TransGen)により示せる
+  sorry
+
+  -- constructor
+  -- · intro h
+  --   -- f,gが(a1,b1),...,(ak,bk)の有限生成合同関係Eに属する ⇒ f,gをSの元で結ぶ有限な推移鎖が存在する
+  --   sorry
+  -- · sorry
+  --   -- f,gをSの元で結ぶ有限な推移鎖が存在する ⇒ f,gが(a1,b1),...,(ak,bk)の有限生成合同関係Eに属する
 
 end test
 
