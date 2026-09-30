@@ -1,4 +1,4 @@
-﻿import Mathlib
+import Mathlib
 
 import Tropical.TropicalLemma
 --import TropicalLemma
@@ -320,3 +320,4 @@ theorem pr : IsCoatom (RingCon.ker booleanization):= by
 --corollary 2.12
 
 --lemma 2.13
+
