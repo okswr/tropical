@@ -1,0 +1,106 @@
+* 1. Introduction
+
+
+
+
+* 1.1. Tropical geometry
+
+
+* 1.2. Overview
+
+
+* 1.3. Acknowledgments
+
+
+
+
+* 2. Semirings and congruences
+
+
+
+
+* 2.1. Semirings
+
+
+* 2.2. Congruences
+
+
+* 2.3. Quotient semirings
+
+
+* 2.4. Generation, restriction and extension of congruences
+
+
+* 2.5. Prime and maximal congruences
+
+
+
+
+* 3. Tropical functions
+
+
+
+
+* 3.1. Congruences and congruence varieties
+
+
+* 3.2. Tropical polynomials that never agree
+
+
+* 3.3. Tropical polynomials that always agree
+
+
+* 3.3.1. Desaturated polynomials
+
+
+* 3.3.2. Saturated polynomials
+
+
+
+
+
+
+* 4. The weak tropical Nullstellensatz for congruences
+
+
+
+
+* 4.1. The principally generated case
+
+
+* 4.2. Flatness
+
+
+* 4.3. The general case
+
+
+
+
+* 5. The strong tropical Nullstellensatz for congruences
+
+
+
+
+* 5.1. A candidate for E(V(E))
+
+
+* 5.1.1. The radical of a congruence
+
+
+* 5.1.2. Limit pairs
+
+
+
+
+* 5.2. The tropically vanishing case
+
+
+* 5.3. The tropically constant case
+
+
+* 5.4. The general case
+
+
+
+
+* References
