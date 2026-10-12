@@ -351,7 +351,6 @@ end SemiringCongruence2
 
 -- (Σ[m,n ∈ ℤᵏ≥0] rm,n aᵐ bⁿ, Σ[m,n ∈ ℤᵏ≥0] rm,n aⁿ bᵐ)
 
--- rₘ,ₙ
 -- rm,n ∈R は有限個を除いてすべて 0 であるものとする。
 
 -- このとき、合同関係 E は、有限な推移鎖
@@ -361,123 +360,155 @@ end SemiringCongruence2
 -- が存在するようなすべての組 (f,g) からなる。
 
 
-variable {R : Type*} [Semiring R]
-#check R[X][X]
-#check Polynomial R
-#check Polynomial (Polynomial R)
-#check monomial
-
--- Σ[m,n ∈ ℤᵏ≥0] rm,n aᵐ bⁿ
-
 namespace test
-
 variable {R : Type*} [CommSemiring R]
 
+-- 多重指数a ∈ Rᵏ, m ∈ ℤᵏ,aᵐ := ∏ i ∈ k, a i ^ m i 用の関数を定義する。
+def multiPow {k : ℕ} (a : Fin k → R) (m : Fin k → ℕ) : R :=
+  ∏ i : Fin k, a i ^ m i
+
+-- 集合 S := {(Σ[m,n ∈ ℤᵏ≥0] rm,n aᵐ bⁿ, Σ[m,n ∈ ℤᵏ≥0] rm,n aⁿ bᵐ) | rm,n ∈ R は有限個を除いてすべて 0}
+-- を定義する。
+-- Finsetよりrm,n∈ Rの有限性を保証
+def S_set {k : ℕ} (a b : Fin k → R) : Set (R × R) :=
+  { p : R × R | ∃ (T : Finset ((Fin k → ℕ) × (Fin k → ℕ)))
+                  (r : (Fin k → ℕ) → (Fin k → ℕ) → R),
+      p.1 = ∑ mn ∈ T, r mn.1 mn.2 * multiPow a mn.1 * multiPow b mn.2 ∧
+      p.2 = ∑ mn ∈ T, r mn.1 mn.2 * multiPow a mn.2 * multiPow b mn.1 }
+
+-- (a i, b i) で生成される合同関係 (generated congruence)
+def generatedCon {k : ℕ} (a b : Fin k → R) : RingCon R :=
+  ringConGen (fun x y => ∃ i : Fin k, x = a i ∧ y = b i)
 
 
--- Σ[m,n ∈ ℤᵏ≥0] rm,n aᵐ bⁿ ;rm,nは有限個を除いてゼロ　を表すための定義を与える
--- def r_mn_ambn (a b : Fin k → R) {m n : Fin k → ℕ} (r : ℕ → ℕ → R)
---   (h : ∃(i j : ℕ), ∀(i' j' : ℕ), i < i' → j < j' → r i' j' = 0) : R :=
---     Polynomial.eval (0 : R)
 
--- R[X][Y]
+namespace Th212
+variable {k : ℕ} (a b : Fin k → R)
 
--- a,b ∈ R,Σ[m,n ∈ ℤ≥0] rm,n aᵐ bⁿ
-noncomputable def temp (k : ℕ) (pol : R[X][X]) (a b : R)
-  (h : ∃ (i j : ℕ), max i j < k → (pol.coeff k).coeff k = 0) : R
-  := (pol.eval (Polynomial.C a)).eval b
+-- ∀z ∈ R,(z, z) ∈ S_set a b = {(Σ[m,n ∈ T = ℕᵏ] rm,n aᵐ bⁿ, Σ[m,n ∈ ℕᵏ] rm,n aⁿ bᵐ)}
+-- rm,n ∈ R は有限個を除いてすべて 0 とのことなので、具体的にr0,0 = z, rm,n = 0 (m,n ≠ 0) と与えれば
+-- aᵐbⁿ = aⁿbᵐ = 1 となるので、(z, z) ∈ S_set a b が成り立つ。
+lemma S_diag (z : R) : (z, z) ∈ S_set a b :=
+  ⟨{(0, 0)}, fun _ _ => z, by simp [multiPow], by simp [multiPow]⟩
+
+-- (a i, b i) ∈ S_set a b が成り立つことを示す。
+-- 具体的にr0,1 = 1, rm,n = 0 (m,n ≠ (0,1)) と与えればよい。
+lemma S_gen (i : Fin k) : (a i, b i) ∈ S_set a b := by
+  refine ⟨{(Pi.single i 1, 0)}, fun _ _ => 1, ?_, ?_⟩ <;>
+    simp [multiPow, Pi.single_apply, pow_ite]
+
+lemma S_symm {x y : R} (h : (x, y) ∈ S_set a b) : (y, x) ∈ S_set a b := by
+  obtain ⟨T, r, h1, h2⟩ := h
+  refine ⟨T.map (Equiv.prodComm _ _).toEmbedding, fun m n => r n m, ?_, ?_⟩
+  · simpa using h2
+  · simpa using h1
+
+lemma S_add {x y x' y' : R} (h : (x, y) ∈ S_set a b) (h' : (x', y') ∈ S_set a b) :
+    (x + x', y + y') ∈ S_set a b := by
+  obtain ⟨T, r, h1, h2⟩ := h
+  obtain ⟨T', r', h1', h2'⟩ := h'
+  simp only at h1 h2 h1' h2'
+  refine ⟨T ∪ T', fun m n => (if (m, n) ∈ T then r m n else 0) +
+    (if (m, n) ∈ T' then r' m n else 0), ?_, ?_⟩
+  · simp only [add_mul, Finset.sum_add_distrib, ite_mul, zero_mul]
+    rw [Finset.sum_ite_mem, Finset.sum_ite_mem, Finset.union_inter_cancel_left,
+      Finset.union_inter_cancel_right, h1, h1']
+  · simp only [add_mul, Finset.sum_add_distrib, ite_mul, zero_mul]
+    rw [Finset.sum_ite_mem, Finset.sum_ite_mem, Finset.union_inter_cancel_left,
+      Finset.union_inter_cancel_right, h2, h2']
+
+lemma S_mul_const {x y : R} (h : (x, y) ∈ S_set a b) (z : R) :
+    (x * z, y * z) ∈ S_set a b := by
+  obtain ⟨T, r, h1, h2⟩ := h
+  simp only at h1 h2
+  refine ⟨T, fun m n => r m n * z, ?_, ?_⟩ <;> simp only
+  · rw [h1, Finset.sum_mul]; exact Finset.sum_congr rfl fun _ _ => by ring
+  · rw [h2, Finset.sum_mul]; exact Finset.sum_congr rfl fun _ _ => by ring
+
+lemma TG_symm {x y : R} (h : TransGen (fun x y => (x, y) ∈ S_set a b) x y) :
+    TransGen (fun x y => (x, y) ∈ S_set a b) y x := by
+  induction h with
+  | single h => exact TransGen.single (S_symm a b h)
+  | tail _ h ih => exact TransGen.head (S_symm a b h) ih
+
+lemma TG_add_const {x y : R} (h : TransGen (fun x y => (x, y) ∈ S_set a b) x y) (z : R) :
+    TransGen (fun x y => (x, y) ∈ S_set a b) (x + z) (y + z) := by
+  induction h with
+  | single h => exact TransGen.single (S_add a b h (S_diag a b z))
+  | tail _ h ih => exact TransGen.tail ih (S_add a b h (S_diag a b z))
+
+lemma TG_mul_const {x y : R} (h : TransGen (fun x y => (x, y) ∈ S_set a b) x y) (z : R) :
+    TransGen (fun x y => (x, y) ∈ S_set a b) (x * z) (y * z) := by
+  induction h with
+  | single h => exact TransGen.single (S_mul_const a b h z)
+  | tail _ h ih => exact TransGen.tail ih (S_mul_const a b h z)
+
+lemma multiPow_con (c : RingCon R) (hc : ∀ i, c (a i) (b i)) (m : Fin k → ℕ) :
+    c (multiPow a m) (multiPow b m) := by
+  unfold multiPow
+  induction (Finset.univ : Finset (Fin k)) using Finset.induction_on with
+  | empty => simpa using c.refl 1
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.prod_insert hi]
+    exact c.mul (c.pow _ (hc i)) ih
+
+lemma S_le_con (c : RingCon R) (hc : ∀ i, c (a i) (b i)) {x y : R}
+    (h : (x, y) ∈ S_set a b) : c x y := by
+  obtain ⟨T, r, h1, h2⟩ := h
+  simp only at h1 h2
+  subst h1 h2
+  induction T using Finset.induction_on with
+  | empty => simpa using c.refl 0
+  | insert p s hp ih =>
+    rw [Finset.sum_insert hp, Finset.sum_insert hp]
+    refine c.add ?_ ih
+    have := c.mul (c.mul (c.refl (r p.1 p.2)) (multiPow_con a b c hc p.1))
+      (c.symm (multiPow_con a b c hc p.2))
+    convert this using 1
+    ring
+
+end Th212
 
 
--- a,b ∈ Rᵏ,Σ[m,n ∈ ℤᵏ≥0] rm,n aᵐ bⁿ
-noncomputable def r_mn_ambn_to_R (k : ℕ) (pol : (Fin k → R)[X][X]) (a b : Fin k → R)
-  (h : ∃ (i j : ℕ), max i j < k → (pol.coeff k).coeff k = 0) : R
-  := ∏ n : Fin k,((pol.eval (Polynomial.C a)).eval b) n
--- もしかしたらr_mnがk乗されてしまってるかもしれないので確認した方が良い
--- が、与えたr_mnを予め1/k乗させておけばよいので定理の証明としては問題ない
+open Th212 in
+-- Corollary 2.12 の主張
+-- 任意のa,b∈ Rᵏ を固定したとき、S_set a b によって生成される合同関係は
+-- S_set a b の元で結ばれる有限な推移鎖によって表される。
+theorem th212 {k : ℕ} (a b : Fin k → R) :
+    let S_let := S_set a b -- S = {(Σ[m,n ∈ ℤᵏ≥0] rm,n aᵐ bⁿ, Σ[m,n ∈ ℤᵏ≥0] rm,n aⁿ bᵐ)}の有限集合
+    let E_let := generatedCon a b -- E = ⟨(a1, b1), ..., (ak, bk)⟩の有限生成合同関係
+    ∀ f g : R, E_let f g ↔ TransGen (fun x y => (x, y) ∈ S_let) f g := by
+  intro S E f g
+  constructor
+  -- f ~E g ⇒ f ~S g
+  -- 合同関係Eの意味で関係するf,g∈Rは、Sの元で結ばれる有限な推移鎖によって表される。
+  · intro h
+    induction h with
+    | of x y hxy =>
+      obtain ⟨i, rfl, rfl⟩ := hxy
+      exact TransGen.single (S_gen a b i)
+    | refl x => exact TransGen.single (S_diag a b x)
+    | symm _ ih => exact TG_symm a b ih
+    | trans _ _ ih1 ih2 => exact ih1.trans ih2
+    | add _ _ ih1 ih2 =>
+      rename_i w x y z _ _
+      refine (TG_add_const a b ih1 y).trans ?_
+      have := TG_add_const a b ih2 x
+      simpa [add_comm] using this
+    | mul _ _ ih1 ih2 =>
+      rename_i w x y z _ _
+      refine (TG_mul_const a b ih1 y).trans ?_
+      have := TG_mul_const a b ih2 x
+      simpa [mul_comm] using this
 
--- a,b ∈ Rᵏ,Σ[m,n ∈ ℤᵏ≥0] rm,n aⁿ bᵐ
-noncomputable def r_mn_anbm_to_R (k : ℕ) (pol : (Fin k → R)[X][X]) (a b : Fin k → R)
-  (h : ∃ (i j : ℕ), max i j < k → (pol.coeff k).coeff k = 0) : R
-  := ∏ n : Fin k,((pol.eval (Polynomial.C b)).eval a) n
+  -- f ~S g ⇒ f ~E g
+  -- Sの元で結ばれる有限な推移鎖によって表されるf,g∈Rは、合同関係Eの意味で関係する。
+  · intro h
+    have hc : ∀ i, E (a i) (b i) := fun i =>
+      RingConGen.Rel.of _ _ ⟨i, rfl, rfl⟩
+    induction h with
+    | single h => exact S_le_con a b E hc h
+    | tail _ h ih => exact E.trans ih (S_le_con a b E hc h)
 
--- {(Σ[m,n ∈ ℤᵏ≥0] rm,n aᵐ bⁿ, Σ[m,n ∈ ℤᵏ≥0] rm,n aⁿ bᵐ)}∈ tempSet : R × R
-def tempSet (k : ℕ) (pol : (Fin k → R)[X][X]) (a b : Fin k → R)
-  (h : ∃ (i j : ℕ), max i j < k → (pol.coeff k).coeff k = 0) : Set (R × R) :=
-  {p : (R × R) | p = (r_mn_ambn_to_R k pol a b h, r_mn_anbm_to_R k pol a b h)}
-
--- r_mn_ambn_to_R k pol a b h ,
--- tempSet(名称は後でちゃんとつける)より集合Sを定義した。
-
--- 以下の命題を与え、証明を行う。
--- E を半環 R 上の有限生成合同関係とする。すなわち、
--- E = ⟨(a1, b1), ..., (ak, bk)⟩
--- とする。
--- このとき、合同関係 E は、有限な推移鎖
--- (f, r1), (r1, r2), ..., (rn−1, rn), (rn, g) ∈S
--- が存在するようなすべての組 (f,g) からなる。
-
--- chatgptにより生成された定義
--- def generatedCon (k : ℕ) (a b : Fin k → R) : RingCon R :=
---   sInf {C : RingCon R | ∀ i : Fin k, C (a i) (b i)}
---
-
-def generatedCon (k : ℕ) (a b : Fin k → R) : RingCon R :=
-  ringConGen (fun x y => ∀ i : Fin k, x = a i ∧ y = b i)
-
--- copilotの提案を参考に作成された定理
-theorem th212 (k : ℕ) (pol : (Fin k → R)[X][X]) (a b : Fin k → R)
-  (h : ∃ (i j : ℕ), max i j < k → (pol.coeff k).coeff k = 0) :
-  let S := tempSet k pol a b h
-  let E := generatedCon k a b
-  -- E f g ⇔ (f, g) ∈ E
-  -- Relation.TransGen (fun x y : R => (x, y) ∈ S) f g ⇔ f,gをSの元で結ぶ有限な推移鎖が存在する
-  -- ⇔ ∃ r1,r2,...,rn : R, (f, r1), (r1, r2), ..., (rn−1, rn), (rn, g) ∈ S
-  ∀ f g : R, E f g ↔ TransGen (fun x y : R => (x, y) ∈ S) f g := by
-  intros S E f g
---  exact SemiringCongruence2.ringConGen_eq_TransGen E
--- 方針：上記のC.rに(fun x y => ∀ i : Fin k, x = a i ∧ y = b i)、(fun x y : R => (x, y) ∈ S)を与えたい。　
--- この二つが同値であることを示せば、th211(ringConGen_eq_TransGen)により示せる
-  sorry
-
-  -- constructor
-  -- · intro h
-  --   -- f,gが(a1,b1),...,(ak,bk)の有限生成合同関係Eに属する ⇒ f,gをSの元で結ぶ有限な推移鎖が存在する
-  --   sorry
-  -- · sorry
-  --   -- f,gをSの元で結ぶ有限な推移鎖が存在する ⇒ f,gが(a1,b1),...,(ak,bk)の有限生成合同関係Eに属する
 
 end test
-
-
-
-
-namespace FinitelyGeneratedCongruence
-variable {R : Type*} [Semiring R] {k : ℕ}
-/--
-The monomial `aᵐ bⁿ`, multiplied in increasing coordinate order.  Using an
-ordered list makes the definition valid even when the semiring is noncommutative.
--/
-def abMonomial (a b : Fin k → R) (m n : Fin k → ℕ) : R :=
-  (List.ofFn fun i => a i ^ m i * b i ^ n i).prod
-/--
-The displayed pair
-`(∑ m,n, r m n * aᵐ bⁿ, ∑ m,n, r m n * aⁿ bᵐ)`.
-A finitely supported function is used for `r`, so the requirement that all but
-finitely many coefficients vanish is built into its type.
--/
-def swappedSumPair (a b : Fin k → R)
-    (r : ((Fin k → ℕ) × (Fin k → ℕ)) →₀ R) : R × R :=
-  (∑ p ∈ r.support, r p * abMonomial a b p.1 p.2,
-   ∑ p ∈ r.support, r p * abMonomial a b p.2 p.1)
-/-- The collection of all pairs represented by the displayed finite sums. -/
-def swappedSumPairs (a b : Fin k → R) : Set (R × R) :=
-  Set.range (swappedSumPair a b)
-/-- Membership spells out precisely the existence of finitely supported coefficients. -/
-theorem mem_swappedSumPairs_iff (a b : Fin k → R) (x y : R) :
-    (x, y) ∈ swappedSumPairs a b ↔
-      ∃ r : ((Fin k → ℕ) × (Fin k → ℕ)) →₀ R,
-        x = (∑ p ∈ r.support, r p * abMonomial a b p.1 p.2) ∧
-        y = (∑ p ∈ r.support, r p * abMonomial a b p.2 p.1) := by
-  simp only [swappedSumPairs, Set.mem_range, swappedSumPair,
-    Prod.mk.injEq, eq_comm]
-end FinitelyGeneratedCongruence
